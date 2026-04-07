@@ -30,7 +30,7 @@ module "cloudfront" {
   project_name                   = local.project_name
   environment                    = local.environment
   s3_bucket_regional_domain_name = module.s3_frontend.bucket_regional_domain_name
-  aliases                        = ["food.valiunas.dev"]
+  aliases                        = var.acm_certificate_arn != "" ? ["food.valiunas.dev"] : []
   acm_certificate_arn            = var.acm_certificate_arn
 }
 
