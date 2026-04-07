@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+publish/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Environment
+.env
+.env.local
+.env.*.local
+appsettings.*.local.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+**/*.zip
+!infra/modules/*/dummy.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase
+.branches
+.temp

@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "Maisto planavimas"
+  },
+  "nav": {
+    "planner": "Planuotojas",
+    "recipes": "Receptai",
+    "shopping": "Pirkiniai",
+    "family": "Šeima"
+  },
+  "auth": {
+    "login": "Prisijungti",
+    "register": "Registruotis",
+    "email": "El. paštas",
+    "password": "Slaptažodis",
+    "displayName": "Vardas",
+    "forgotPassword": "Pamiršote slaptažodį?",
+    "noAccount": "Neturite paskyros?",
+    "hasAccount": "Jau turite paskyrą?",
+    "signOut": "Atsijungti",
+    "confirmCode": "Patvirtinimo kodas",
+    "confirm": "Patvirtinti"
+  },
+  "family": {
+    "create": "Sukurti šeimą",
+    "join": "Prisijungti prie šeimos",
+    "name": "Šeimos pavadinimas",
+    "inviteCode": "Kvietimo kodas",
+    "members": "Nariai",
+    "copyCode": "Kopijuoti kodą",
+    "noFamily": "Jūs dar nepriklausote šeimai"
+  },
+  "recipes": {
+    "title": "Receptai",
+    "create": "Naujas receptas",
+    "name": "Pavadinimas",
+    "instructions": "Instrukcijos",
+    "ingredients": "Ingredientai",
+    "addIngredient": "Pridėti ingredientą",
+    "quantity": "Kiekis",
+    "unit": "Vienetas",
+    "save": "Išsaugoti",
+    "delete": "Ištrinti",
+    "empty": "Dar nėra receptų"
+  },
+  "planner": {
+    "title": "Savaitės planas",
+    "addMeal": "Pridėti patiekalą",
+    "breakfast": "Pusryčiai",
+    "lunch": "Pietūs",
+    "dinner": "Vakarienė",
+    "snack": "Užkandis"
+  },
+  "shopping": {
+    "title": "Pirkinių sąrašas",
+    "empty": "Pirkinių sąrašas tuščias",
+    "refresh": "Atnaujinti"
+  },
+  "days": {
+    "mon": "Pirmadienis",
+    "tue": "Antradienis",
+    "wed": "Trečiadienis",
+    "thu": "Ketvirtadienis",
+    "fri": "Penktadienis",
+    "sat": "Šeštadienis",
+    "sun": "Sekmadienis"
+  },
+  "common": {
+    "save": "Išsaugoti",
+    "cancel": "Atšaukti",
+    "delete": "Ištrinti",
+    "edit": "Redaguoti",
+    "loading": "Kraunama...",
+    "error": "Klaida"
+  }
+}

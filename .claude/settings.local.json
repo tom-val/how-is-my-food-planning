@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet add:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__emulate",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__list_console_messages"
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "Food Planning"
+  },
+  "nav": {
+    "planner": "Planner",
+    "recipes": "Recipes",
+    "shopping": "Shopping",
+    "family": "Family"
+  },
+  "auth": {
+    "login": "Sign In",
+    "register": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display Name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signOut": "Sign Out",
+    "confirmCode": "Confirmation Code",
+    "confirm": "Confirm"
+  },
+  "family": {
+    "create": "Create Family",
+    "join": "Join Family",
+    "name": "Family Name",
+    "inviteCode": "Invite Code",
+    "members": "Members",
+    "copyCode": "Copy Code",
+    "noFamily": "You don't belong to a family yet"
+  },
+  "recipes": {
+    "title": "Recipes",
+    "create": "New Recipe",
+    "name": "Name",
+    "instructions": "Instructions",
+    "ingredients": "Ingredients",
+    "addIngredient": "Add Ingredient",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "save": "Save",
+    "delete": "Delete",
+    "empty": "No recipes yet"
+  },
+  "planner": {
+    "title": "Weekly Plan",
+    "addMeal": "Add Meal",
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snack": "Snack"
+  },
+  "shopping": {
+    "title": "Shopping List",
+    "empty": "Shopping list is empty",
+    "refresh": "Refresh"
+  },
+  "days": {
+    "mon": "Monday",
+    "tue": "Tuesday",
+    "wed": "Wednesday",
+    "thu": "Thursday",
+    "fri": "Friday",
+    "sat": "Saturday",
+    "sun": "Sunday"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error"
+  }
+}

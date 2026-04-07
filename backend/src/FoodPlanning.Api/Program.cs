@@ -1,0 +1,63 @@
+using Amazon.Lambda.AspNetCoreServer;
+using FluentValidation;
+using FoodPlanning.Api.Shared;
+using FoodPlanning.Api.Shared.Database;
+using FoodPlanning.Api.Shared.Middleware;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Structured JSON logging for Lambda (queryable in CloudWatch Logs Insights).
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
+}
+
+// AWS Lambda hosting.
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
+
+// Configuration.
+builder.Services
+    .AddOptions<DatabaseSettings>()
+    .Bind(builder.Configuration.GetSection(DatabaseSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+// Database.
+builder.Services.AddScoped<DbConnectionFactory>();
+
+// CORS.
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
+// FluentValidation.
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+var app = builder.Build();
+
+// Middleware pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseCors();
+
+// Auth middleware: production reads the userId from the Lambda authorizer context.
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+{
+    app.UseMiddleware<AuthorizerContextMiddleware>();
+}
+
+// Routes.
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+app.Run();

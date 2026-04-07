@@ -157,11 +157,11 @@ Follow the output to add the DNS validation CNAME record to your domain. Wait fo
 1. Go to [supabase.com](https://supabase.com) and create an organisation
 2. Create a new project in the `eu-central-1` region
 3. Note the following:
-   - **Organisation ID** (from the organisation settings URL)
-   - **Database password** (set during project creation)
-   - **Project reference** (from project settings)
+   - **Project reference** (from project settings → General)
    - **Supabase access token** (from account settings → Access Tokens)
-4. Get the database connection string from project settings → Database → Connection string (Transaction pooler)
+4. Get the database connection string from project settings → Database → Connection string (Transaction pooler, IPv4)
+   - Use the Supavisor pooler format with `Pooling=false` (server-side pooling handles it)
+   - Example: `Host=<pooler_host>;Port=6543;Database=postgres;Username=postgres.<project_ref>;Password=<pwd>;SSL Mode=Require;Timeout=15;Command Timeout=30;Pooling=false;Multiplexing=false`
 
 ### 6. GitHub Repository Secrets
 
@@ -172,10 +172,9 @@ Create a `Prod` environment and add these secrets:
 | Secret | Description |
 |--------|-------------|
 | `AWS_ROLE_ARN` | ARN of the GitHub Actions IAM role (step 3) |
-| `SUPABASE_ACCESS_TOKEN` | Supabase management API token |
-| `SUPABASE_ORGANIZATION_ID` | Supabase organisation UUID |
-| `SUPABASE_DATABASE_PASSWORD` | Supabase project database password |
-| `SUPABASE_DB_CONNECTION_STRING` | PostgreSQL connection string (transaction pooler) |
+| `SUPABASE_ACCESS_TOKEN` | Supabase access token (for CLI migrations) |
+| `SUPABASE_PROJECT_REF` | Supabase project reference ID (for CLI `link`) |
+| `SUPABASE_DB_CONNECTION_STRING` | PostgreSQL connection string (transaction pooler, step 5) |
 | `ACM_CERTIFICATE_ARN` | ACM certificate ARN for food.valiunas.dev (step 4) |
 
 ### 7. DNS Configuration
