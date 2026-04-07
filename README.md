@@ -88,56 +88,22 @@ aws dynamodb create-table \
 
 Create an IAM OIDC identity provider and role so GitHub Actions can authenticate without long-lived credentials.
 
-#### 3a. Create OIDC Provider (skip if already exists)
-
-```bash
-aws iam create-open-id-connect-provider \
-  --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-```
-
-#### 3b. Create IAM Role
-
-Create a file `trust-policy.json`:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:tom-val/how-is-my-food-planning:*"
-        }
-      }
-    }
-  ]
-}
-```
-
-```bash
-# Replace <ACCOUNT_ID> in trust-policy.json first
-
-aws iam create-role \
-  --role-name food-planning-github-actions \
-  --assume-role-policy-document file://trust-policy.json
-
-# Attach AdministratorAccess (scope down later for production)
-aws iam attach-role-policy \
-  --role-name food-planning-github-actions \
-  --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
-```
-
-Note the role ARN — you'll need it for GitHub secrets.
+1. Go to **IAM → Identity providers**
+2. If `token.actions.githubusercontent.com` doesn't exist yet, click **Add provider**:
+   - Provider type: **OpenID Connect**
+   - Provider URL: `https://token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+3. Go to **IAM → Roles → Create role**
+4. Trusted entity type: **Web identity**
+5. Fill in the web identity form:
+   - Identity provider: `token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+   - GitHub organization: `tom-val`
+   - GitHub repository: `how-is-my-food-planning`
+   - GitHub branch: `main`
+6. Attach the **AdministratorAccess** policy (scope down later for production)
+7. Role name: `food-planning-github-actions`
+8. Create the role and note the **Role ARN** — you'll need it for GitHub secrets
 
 ### 4. ACM Certificate
 
