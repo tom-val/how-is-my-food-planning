@@ -57,12 +57,16 @@
     "name": "Name",
     "instructions": "Instructions",
     "ingredients": "Ingredients",
+    "ingredientName": "Ingredient",
     "addIngredient": "Add Ingredient",
     "quantity": "Quantity",
     "unit": "Unit",
     "save": "Save",
     "delete": "Delete",
-    "empty": "No recipes yet"
+    "empty": "No recipes yet",
+    "notFound": "Recipe not found",
+    "deleteConfirmTitle": "Delete recipe?",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"?"
   },
   "planner": {
     "title": "Weekly Plan",

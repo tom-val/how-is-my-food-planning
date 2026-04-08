@@ -57,12 +57,16 @@
     "name": "Pavadinimas",
     "instructions": "Instrukcijos",
     "ingredients": "Ingredientai",
+    "ingredientName": "Ingredientas",
     "addIngredient": "Pridėti ingredientą",
     "quantity": "Kiekis",
     "unit": "Vienetas",
     "save": "Išsaugoti",
     "delete": "Ištrinti",
-    "empty": "Dar nėra receptų"
+    "empty": "Dar nėra receptų",
+    "notFound": "Receptas nerastas",
+    "deleteConfirmTitle": "Ištrinti receptą?",
+    "deleteConfirmMessage": "Ar tikrai norite ištrinti {{name}}?"
   },
   "planner": {
     "title": "Savaitės planas",

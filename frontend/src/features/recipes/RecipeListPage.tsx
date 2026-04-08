@@ -1,8 +1,115 @@
-import { Typography } from "@mui/material";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardActionArea,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
+import { Add } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { listRecipes, deleteRecipe } from "../../api/recipeApi";
+import type { RecipeWithIngredients } from "../../api/recipeApi";
 
 export default function RecipeListPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
 
-  return <Typography variant="h4">{t("recipes.title")}</Typography>;
+  const { data: recipes, isLoading } = useQuery({
+    queryKey: ["recipes"],
+    queryFn: listRecipes,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteRecipe(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      setRecipeToDelete(null);
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box maxWidth={600} mx="auto">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4">{t("recipes.title")}</Typography>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => navigate("/recipes/new")}
+        >
+          {t("recipes.create")}
+        </Button>
+      </Box>
+
+      {!recipes?.length ? (
+        <Typography color="text.secondary">{t("recipes.empty")}</Typography>
+      ) : (
+        <Box display="flex" flexDirection="column" gap={1.5}>
+          {recipes.map(({ recipe, ingredients }) => (
+            <Card key={recipe.id} variant="outlined">
+              <CardActionArea
+                onClick={() => navigate(`/recipes/${recipe.id}`)}
+                sx={{ display: "flex", justifyContent: "flex-start" }}
+              >
+                <CardContent sx={{ width: "100%" }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6">{recipe.name}</Typography>
+                    <Chip
+                      label={`${ingredients.length} ${t("recipes.ingredients").toLowerCase()}`}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          ))}
+        </Box>
+      )}
+
+      <Dialog
+        open={!!recipeToDelete}
+        onClose={() => setRecipeToDelete(null)}
+      >
+        <DialogTitle>{t("recipes.deleteConfirmTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("recipes.deleteConfirmMessage", { name: recipeToDelete?.recipe.name })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRecipeToDelete(null)}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            color="error"
+            onClick={() => recipeToDelete && deleteMutation.mutate(recipeToDelete.recipe.id)}
+            disabled={deleteMutation.isPending}
+          >
+            {t("common.delete")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 }
