@@ -36,7 +36,6 @@ export default function FamilyPage() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<View>("loading");
   const [name, setName] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
@@ -55,7 +54,7 @@ export default function FamilyPage() {
         : "noFamily";
 
   const createMutation = useMutation({
-    mutationFn: () => createFamily(name, displayName),
+    mutationFn: () => createFamily(name, user!.displayName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family"] });
       setError("");
@@ -64,7 +63,7 @@ export default function FamilyPage() {
   });
 
   const joinMutation = useMutation({
-    mutationFn: () => joinFamily(inviteCode, displayName),
+    mutationFn: () => joinFamily(inviteCode, user!.displayName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family"] });
       setError("");
@@ -156,14 +155,7 @@ export default function FamilyPage() {
               margin="normal"
               required
             />
-            <TextField
-              fullWidth
-              label={t("auth.displayName")}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              margin="normal"
-              required
-            />
+
             <Box display="flex" gap={1} mt={2}>
               <Button
                 type="submit"
@@ -210,14 +202,7 @@ export default function FamilyPage() {
               margin="normal"
               required
             />
-            <TextField
-              fullWidth
-              label={t("auth.displayName")}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              margin="normal"
-              required
-            />
+
             <Box display="flex" gap={1} mt={2}>
               <Button
                 type="submit"
