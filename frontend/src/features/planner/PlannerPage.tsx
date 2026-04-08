@@ -303,7 +303,7 @@ export default function PlannerPage() {
       </Menu>
 
       {/* Day cards */}
-      <Box display="flex" flexDirection="column" gap={2}>
+      <Box display="flex" flexDirection="column" gap={2} className="planner-days-grid">
         {DAY_KEYS.map((dayKey, dayIndex) => (
           <Card key={dayKey}>
             <CardContent sx={{ pb: "12px !important" }}>
@@ -350,6 +350,7 @@ export default function PlannerPage() {
                       ))}
                       <IconButton
                         size="small"
+                        className="no-print"
                         onClick={() =>
                           setAddDialog({ dayOfWeek: dayIndex, mealType })
                         }

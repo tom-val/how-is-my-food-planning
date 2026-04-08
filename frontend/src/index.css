@@ -14,11 +14,18 @@ body {
 }
 
 @media print {
+  @page {
+    margin: 8mm;
+    size: A4;
+  }
+
   /* Hide interactive elements */
   .no-print,
+  .no-print-action,
   .MuiBottomNavigation-root,
   .MuiAppBar-root,
-  .MuiDrawer-root {
+  .MuiDrawer-root,
+  .MuiToolbar-root {
     display: none !important;
   }
 
@@ -27,25 +34,119 @@ body {
     display: block !important;
   }
 
-  /* Reset layout for print */
+  /* Reset layout */
   body {
     background: white !important;
+    font-size: 10px !important;
+  }
+
+  #root {
+    min-height: auto;
   }
 
   main {
     padding: 0 !important;
+    margin: 0 !important;
     max-width: none !important;
   }
 
-  /* Avoid page breaks inside cards */
+  /* Remove card borders/shadows, tighten spacing */
   .MuiCard-root {
     break-inside: avoid;
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    margin-bottom: 4px !important;
   }
 
-  /* Compact spacing */
   .MuiCardContent-root {
-    padding: 8px 12px !important;
+    padding: 4px 8px !important;
   }
+
+  /* Compact typography */
+  h4.MuiTypography-root {
+    font-size: 16px !important;
+    margin-bottom: 4px !important;
+  }
+
+  h6.MuiTypography-root {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .MuiTypography-subtitle2 {
+    font-size: 8px !important;
+    margin-bottom: 1px !important;
+  }
+
+  .MuiTypography-body2 {
+    font-size: 9px !important;
+  }
+
+  /* Compact chips */
+  .MuiChip-root {
+    height: 18px !important;
+    font-size: 9px !important;
+  }
+
+  .MuiChip-label {
+    padding: 0 6px !important;
+  }
+
+  .MuiChip-deleteIcon {
+    display: none !important;
+  }
+
+  /* Compact list items */
+  .MuiListItem-root {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    min-height: auto !important;
+  }
+
+  .MuiListItemText-root {
+    margin: 0 !important;
+  }
+
+  .MuiListItemText-primary {
+    font-size: 10px !important;
+  }
+
+  .MuiListItemText-secondary {
+    font-size: 8px !important;
+  }
+
+  .MuiListItemIcon-root {
+    min-width: 24px !important;
+  }
+
+  /* Compact table */
+  .MuiTableCell-root {
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+  }
+
+  /* Planner days: 2-column grid */
+  .planner-days-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
+    flex-direction: unset !important;
+  }
+
+  /* Shopping list: 2-column grid for items */
+  .MuiList-root {
+    columns: 2 !important;
+    column-gap: 8px !important;
+  }
+
+  .MuiList-root > * {
+    break-inside: avoid;
+  }
+
+  /* Tighter flex gap */
+  [class*="gap"] {
+    gap: 4px !important;
+  }
+
 }
