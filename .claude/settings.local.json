@@ -12,7 +12,9 @@
       "mcp__chrome-devtools__navigate_page",
       "mcp__chrome-devtools__list_console_messages",
       "WebFetch(domain:mui.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__chrome-devtools__take_snapshot",
+      "Bash(npm run:*)"
     ]
   }
 }

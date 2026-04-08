@@ -159,7 +159,7 @@ export function RecipeForm({
         {t("recipes.addIngredient")}
       </Button>
 
-      <Box>
+      <Box sx={{ mb: 2 }}>
         <Button
           type="submit"
           variant="contained"

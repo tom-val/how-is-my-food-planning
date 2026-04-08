@@ -30,7 +30,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { LanguageSwitcher } from "../shared/LanguageSwitcher";
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 240;
 
 const navItems = [
   { path: "/planner", labelKey: "nav.planner", icon: <CalendarMonth /> },
@@ -67,15 +67,12 @@ export function AppLayout() {
         sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}
       >
         <Toolbar>
-          {isMobile && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
-              <Restaurant />
-              <Typography variant="h6" noWrap fontWeight={700}>
-                {t("app.title")}
-              </Typography>
-            </Box>
-          )}
-          {!isMobile && <Box sx={{ flexGrow: 1 }} />}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
+            <Restaurant />
+            <Typography variant="h6" noWrap fontWeight={700}>
+              {t("app.title")}
+            </Typography>
+          </Box>
 
           {user && (
             <Chip
@@ -118,25 +115,6 @@ export function AppLayout() {
             }}
           >
             <Toolbar />
-            <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  p: 1.5,
-                  borderRadius: 2,
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                }}
-              >
-                <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
-                  <Restaurant fontSize="small" />
-                </Avatar>
-                <Typography variant="h6" fontWeight={700} color="primary.dark">
-                  {t("app.title")}
-                </Typography>
-              </Box>
-            </Box>
             <List sx={{ px: 1, pt: 1 }}>
               {navItems.map((item) => (
                 <ListItemButton
@@ -160,7 +138,7 @@ export function AppLayout() {
           sx={{
             flexGrow: 1,
             p: { xs: 2, md: 3 },
-            pb: isMobile ? 10 : 3,
+            pb: isMobile ? 12 : 3,
             maxWidth: 900,
             mx: "auto",
             width: "100%",
