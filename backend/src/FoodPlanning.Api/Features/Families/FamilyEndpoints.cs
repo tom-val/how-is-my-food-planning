@@ -16,6 +16,7 @@ public static class FamilyEndpoints
         group.MapPost("/{id:guid}/regenerate-code", RegenerateCode);
         group.MapDelete("/{id:guid}/members/{userId}", RemoveMember);
         group.MapPost("/leave", LeaveFamily);
+        group.MapPost("/{id:guid}/members/{userId}/promote", PromoteMember);
     }
 
     private static async Task<IResult> CreateFamily(
@@ -133,5 +134,21 @@ public static class FamilyEndpoints
 
         await repository.LeaveAsync(membership.FamilyId, userId);
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> PromoteMember(
+        Guid id,
+        string userId,
+        IFamilyRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var currentUserId = context.GetUserId();
+        await membership.RequireOwnerAsync(currentUserId, id);
+
+        var promoted = await repository.PromoteToOwnerAsync(id, userId);
+        return promoted
+            ? Results.NoContent()
+            : Results.NotFound(new { error = "Member not found or already an owner." });
     }
 }

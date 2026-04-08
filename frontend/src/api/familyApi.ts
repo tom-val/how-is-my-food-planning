@@ -67,6 +67,13 @@ export async function leaveFamily(): Promise<void> {
   await apiClient.post("/v1/families/leave");
 }
 
+export async function promoteMember(
+  familyId: string,
+  userId: string,
+): Promise<void> {
+  await apiClient.post(`/v1/families/${familyId}/members/${userId}/promote`);
+}
+
 export async function removeMember(
   familyId: string,
   userId: string,

@@ -31,6 +31,7 @@ public interface IFamilyRepository
     Task<string> RegenerateInviteCodeAsync(Guid familyId);
     Task<bool> RemoveMemberAsync(Guid familyId, string userId);
     Task LeaveAsync(Guid familyId, string userId);
+    Task<bool> PromoteToOwnerAsync(Guid familyId, string userId);
 }
 
 public class FamilyRepository : IFamilyRepository
@@ -244,6 +245,23 @@ public class FamilyRepository : IFamilyRepository
         }
 
         await tx.CommitAsync();
+    }
+
+    public async Task<bool> PromoteToOwnerAsync(Guid familyId, string userId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE family_members
+            SET role = 'owner'
+            WHERE family_id = @familyId AND user_id = @userId AND role = 'member'
+            """, conn);
+        cmd.Parameters.AddWithValue("familyId", familyId);
+        cmd.Parameters.AddWithValue("userId", userId);
+
+        return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
     private static async Task<List<FamilyMember>> GetMembersInternalAsync(NpgsqlConnection conn, Guid familyId)

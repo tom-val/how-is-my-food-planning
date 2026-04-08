@@ -21,7 +21,7 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { ContentCopy, PersonRemove, Refresh, ExitToApp } from "@mui/icons-material";
+import { ContentCopy, PersonRemove, Refresh, ExitToApp, ArrowUpward } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
@@ -31,6 +31,7 @@ import {
   joinFamily,
   regenerateInviteCode,
   removeMember,
+  promoteMember,
   leaveFamily,
 } from "../../api/familyApi";
 
@@ -46,6 +47,7 @@ export default function FamilyPage() {
   const [error, setError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{ userId: string; displayName: string } | null>(null);
 
   const { data: familyData, isLoading } = useQuery({
     queryKey: ["family", "my"],
@@ -88,6 +90,14 @@ export default function FamilyPage() {
   const removeMutation = useMutation({
     mutationFn: (userId: string) =>
       removeMember(familyData!.family.id, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family"] });
+    },
+  });
+
+  const promoteMutation = useMutation({
+    mutationFn: (userId: string) =>
+      promoteMember(familyData!.family.id, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family"] });
     },
@@ -295,10 +305,17 @@ export default function FamilyPage() {
                 />
                 {isOwner && member.role !== "owner" && (
                   <ListItemSecondaryAction>
+                    <Tooltip title={t("family.promote")}>
+                      <IconButton
+                        onClick={() => promoteMutation.mutate(member.userId)}
+                        disabled={promoteMutation.isPending}
+                      >
+                        <ArrowUpward />
+                      </IconButton>
+                    </Tooltip>
                     <IconButton
                       edge="end"
-                      onClick={() => removeMutation.mutate(member.userId)}
-                      disabled={removeMutation.isPending}
+                      onClick={() => setMemberToRemove({ userId: member.userId, displayName: member.displayName })}
                     >
                       <PersonRemove />
                     </IconButton>
@@ -340,6 +357,36 @@ export default function FamilyPage() {
             disabled={leaveMutation.isPending}
           >
             {t("family.leave")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+      >
+        <DialogTitle>{t("family.removeConfirmTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("family.removeConfirmMessage", { name: memberToRemove?.displayName })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMemberToRemove(null)}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            color="error"
+            onClick={() => {
+              if (memberToRemove) {
+                removeMutation.mutate(memberToRemove.userId, {
+                  onSuccess: () => setMemberToRemove(null),
+                });
+              }
+            }}
+            disabled={removeMutation.isPending}
+          >
+            {t("family.removeMember")}
           </Button>
         </DialogActions>
       </Dialog>

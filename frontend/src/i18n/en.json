@@ -45,7 +45,11 @@
     "joining": "Joining family...",
     "leave": "Leave Family",
     "leaveConfirmTitle": "Leave family?",
-    "leaveConfirmMessage": "Are you sure you want to leave this family? You will lose access to family recipes and plans."
+    "leaveConfirmMessage": "Are you sure you want to leave this family? You will lose access to family recipes and plans.",
+    "promote": "Promote to owner",
+    "removeMember": "Remove",
+    "removeConfirmTitle": "Remove member?",
+    "removeConfirmMessage": "Are you sure you want to remove {{name}} from the family?"
   },
   "recipes": {
     "title": "Recipes",

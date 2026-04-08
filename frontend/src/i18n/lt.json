@@ -45,7 +45,11 @@
     "joining": "Jungiamasi prie šeimos...",
     "leave": "Išeiti iš šeimos",
     "leaveConfirmTitle": "Išeiti iš šeimos?",
-    "leaveConfirmMessage": "Ar tikrai norite išeiti iš šeimos? Nebematysite šeimos receptų ir planų."
+    "leaveConfirmMessage": "Ar tikrai norite išeiti iš šeimos? Nebematysite šeimos receptų ir planų.",
+    "promote": "Paaukštinti iki savininko",
+    "removeMember": "Pašalinti",
+    "removeConfirmTitle": "Pašalinti narį?",
+    "removeConfirmMessage": "Ar tikrai norite pašalinti {{name}} iš šeimos?"
   },
   "recipes": {
     "title": "Receptai",
