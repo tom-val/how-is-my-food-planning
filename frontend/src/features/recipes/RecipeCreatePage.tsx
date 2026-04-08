@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Typography, Box } from "@mui/material";
+import { Typography, Box, Button } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createRecipe } from "../../api/recipeApi";
@@ -29,9 +30,16 @@ export default function RecipeCreatePage() {
 
   return (
     <Box maxWidth={600} mx="auto">
-      <Typography variant="h4" gutterBottom>
-        {t("recipes.create")}
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4">{t("recipes.create")}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Close />}
+          onClick={() => navigate("/recipes")}
+        >
+          {t("common.cancel")}
+        </Button>
+      </Box>
       <RecipeForm
         onSubmit={(name, instructions, ingredients) =>
           mutation.mutate({ name, instructions, ingredients })

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { Typography, Box, CircularProgress } from "@mui/material";
+import { Typography, Box, CircularProgress, Button } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRecipe, updateRecipe } from "../../api/recipeApi";
@@ -48,9 +49,16 @@ export default function RecipeEditPage() {
 
   return (
     <Box maxWidth={600} mx="auto">
-      <Typography variant="h4" gutterBottom>
-        {t("common.edit")}
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4">{t("common.edit")}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Close />}
+          onClick={() => navigate(`/recipes/${id}`)}
+        >
+          {t("common.cancel")}
+        </Button>
+      </Box>
       <RecipeForm
         initialName={data.recipe.name}
         initialInstructions={data.recipe.instructions}
