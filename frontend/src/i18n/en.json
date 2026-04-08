@@ -82,7 +82,8 @@
     "randomNextWeek": "Random day next week",
     "randomWeekAfter": "Random day week after next",
     "random30Days": "Random day within 30 days",
-    "random6Months": "Random day within 6 months"
+    "random6Months": "Random day within 6 months",
+    "unassigned": "Unassigned"
   },
   "shopping": {
     "title": "Shopping List",

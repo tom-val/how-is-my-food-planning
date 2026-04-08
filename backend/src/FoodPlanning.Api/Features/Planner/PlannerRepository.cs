@@ -8,7 +8,9 @@ public record WeeklyPlan(
     Guid FamilyId,
     DateOnly WeekStartDate,
     string CreatedBy,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? AssignedTo,
+    string? AssignedName);
 
 public record PlannedMeal(
     Guid Id,
@@ -27,6 +29,7 @@ public interface IPlannerRepository
     Task<bool> RemoveMealAsync(Guid planId, Guid mealId);
     Task<Guid?> GetPlanFamilyIdAsync(Guid planId);
     Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId);
+    Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName);
 }
 
 public class PlannerRepository : IPlannerRepository
@@ -46,7 +49,7 @@ public class PlannerRepository : IPlannerRepository
         // Try to find existing plan.
         await using var findCmd = new NpgsqlCommand(
             """
-            SELECT id, family_id, week_start_date, created_by, created_at
+            SELECT id, family_id, week_start_date, created_by, created_at, assigned_to, assigned_name
             FROM weekly_plans
             WHERE family_id = @familyId AND week_start_date = @weekStart
             """, conn);
@@ -67,7 +70,7 @@ public class PlannerRepository : IPlannerRepository
                 """
                 INSERT INTO weekly_plans (family_id, week_start_date, created_by)
                 VALUES (@familyId, @weekStart, @userId)
-                RETURNING id, family_id, week_start_date, created_by, created_at
+                RETURNING id, family_id, week_start_date, created_by, created_at, assigned_to, assigned_name
                 """, conn);
             createCmd.Parameters.AddWithValue("familyId", familyId);
             createCmd.Parameters.AddWithValue("weekStart", weekStart);
@@ -161,6 +164,29 @@ public class PlannerRepository : IPlannerRepository
         return await AddMealAsync(planWithMeals.Plan.Id, dayOfWeekIndex, mealType, recipeId);
     }
 
+    public async Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE weekly_plans
+            SET assigned_to = @assignedTo, assigned_name = @assignedName
+            WHERE id = @planId
+            RETURNING id, family_id, week_start_date, created_by, created_at, assigned_to, assigned_name
+            """, conn);
+        cmd.Parameters.AddWithValue("planId", planId);
+        cmd.Parameters.AddWithValue("assignedTo", (object?)assignedTo ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("assignedName", (object?)assignedName ?? DBNull.Value);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+            throw new InvalidOperationException("Plan not found.");
+
+        return ReadPlan(reader);
+    }
+
     private static async Task<List<PlannedMeal>> GetMealsAsync(NpgsqlConnection conn, Guid planId)
     {
         await using var cmd = new NpgsqlCommand(
@@ -186,7 +212,9 @@ public class PlannerRepository : IPlannerRepository
         reader.GetGuid(1),
         DateOnly.FromDateTime(reader.GetDateTime(2)),
         reader.GetString(3),
-        reader.GetDateTime(4));
+        reader.GetDateTime(4),
+        reader.IsDBNull(5) ? null : reader.GetString(5),
+        reader.IsDBNull(6) ? null : reader.GetString(6));
 
     private static PlannedMeal ReadMeal(NpgsqlDataReader reader) => new(
         reader.GetGuid(0),

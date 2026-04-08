@@ -15,6 +15,8 @@ export interface WeeklyPlan {
   weekStartDate: string;
   createdBy: string;
   createdAt: string;
+  assignedTo: string | null;
+  assignedName: string | null;
 }
 
 export interface WeeklyPlanWithMeals {
@@ -61,6 +63,18 @@ export async function scheduleMeal(
     mealType,
     recipeId,
   });
+  return data;
+}
+
+export async function assignPlan(
+  planId: string,
+  assignedTo: string | null,
+  assignedName: string | null,
+): Promise<WeeklyPlan> {
+  const { data } = await apiClient.patch<WeeklyPlan>(
+    `/v1/plans/${planId}/assign`,
+    { assignedTo, assignedName },
+  );
   return data;
 }
 

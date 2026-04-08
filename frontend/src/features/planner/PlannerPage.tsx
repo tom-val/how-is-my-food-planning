@@ -30,6 +30,8 @@ import {
   Shuffle,
   CalendarMonth,
   Print,
+  Person,
+  PersonOff,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,9 +40,11 @@ import {
   addMeal,
   removeMeal,
   scheduleMeal,
+  assignPlan,
   getMonday,
 } from "../../api/plannerApi";
 import { listRecipes } from "../../api/recipeApi";
+import { getMyFamily } from "../../api/familyApi";
 import type { PlannedMeal } from "../../api/plannerApi";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -73,6 +77,9 @@ export default function PlannerPage() {
   } | null>(null);
   const [recipeSearch, setRecipeSearch] = useState("");
 
+  // Assign menu state.
+  const [assignAnchorEl, setAssignAnchorEl] = useState<HTMLElement | null>(null);
+
   // Long-press schedule menu state.
   const [scheduleMenu, setScheduleMenu] = useState<{
     anchorEl: HTMLElement;
@@ -95,6 +102,20 @@ export default function PlannerPage() {
   const { data: recipes } = useQuery({
     queryKey: ["recipes"],
     queryFn: listRecipes,
+  });
+
+  const { data: familyData } = useQuery({
+    queryKey: ["family", "my"],
+    queryFn: getMyFamily,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ assignedTo, assignedName }: { assignedTo: string | null; assignedName: string | null }) =>
+      assignPlan(planData!.plan.id, assignedTo, assignedName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
+      setAssignAnchorEl(null);
+    },
   });
 
   const filteredRecipes = useMemo(() => {
@@ -218,20 +239,68 @@ export default function PlannerPage() {
         </IconButton>
       </Box>
 
-      <Box display="flex" justifyContent="flex-end" mb={2} gap={1} className="no-print">
-        {weekOffset !== 0 && (
-          <Button size="small" onClick={() => setWeekOffset(0)}>
-            {t("planner.today")}
-          </Button>
-        )}
-        <Button
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        {/* Assignee chip */}
+        <Chip
+          icon={planData?.plan.assignedName ? <Person /> : <PersonOff />}
+          label={planData?.plan.assignedName ?? t("planner.unassigned")}
+          variant={planData?.plan.assignedName ? "filled" : "outlined"}
+          color={planData?.plan.assignedName ? "primary" : "default"}
+          onClick={(e) => setAssignAnchorEl(e.currentTarget)}
           size="small"
-          startIcon={<Print />}
-          onClick={() => window.print()}
-        >
-          {t("common.print")}
-        </Button>
+          className="no-print-action"
+        />
+        {/* Print-only assignee text */}
+        {planData?.plan.assignedName && (
+          <Typography className="print-only" variant="body2" fontWeight={600}>
+            {planData.plan.assignedName}
+          </Typography>
+        )}
+
+        <Box display="flex" gap={1} className="no-print">
+          {weekOffset !== 0 && (
+            <Button size="small" onClick={() => setWeekOffset(0)}>
+              {t("planner.today")}
+            </Button>
+          )}
+          <Button
+            size="small"
+            startIcon={<Print />}
+            onClick={() => window.print()}
+          >
+            {t("common.print")}
+          </Button>
+        </Box>
       </Box>
+
+      {/* Assign menu */}
+      <Menu
+        anchorEl={assignAnchorEl}
+        open={!!assignAnchorEl}
+        onClose={() => setAssignAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => assignMutation.mutate({ assignedTo: null, assignedName: null })}
+        >
+          <ListItemIcon><PersonOff fontSize="small" /></ListItemIcon>
+          <ListItemText>{t("planner.unassigned")}</ListItemText>
+        </MenuItem>
+        {familyData?.members.map((member) => (
+          <MenuItem
+            key={member.userId}
+            selected={planData?.plan.assignedTo === member.userId}
+            onClick={() =>
+              assignMutation.mutate({
+                assignedTo: member.userId,
+                assignedName: member.displayName,
+              })
+            }
+          >
+            <ListItemIcon><Person fontSize="small" /></ListItemIcon>
+            <ListItemText>{member.displayName}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
 
       {/* Day cards */}
       <Box display="flex" flexDirection="column" gap={2}>

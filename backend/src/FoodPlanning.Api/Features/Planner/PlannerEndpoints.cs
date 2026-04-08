@@ -14,6 +14,7 @@ public static class PlannerEndpoints
         group.MapPost("/{id:guid}/meals", AddMeal);
         group.MapDelete("/{id:guid}/meals/{mealId:guid}", RemoveMeal);
         group.MapPost("/schedule", ScheduleMeal);
+        group.MapPatch("/{id:guid}/assign", AssignPlan);
     }
 
     private static async Task<IResult> GetPlan(
@@ -99,4 +100,24 @@ public static class PlannerEndpoints
 
         return Results.Created($"/v1/plans/{meal.WeeklyPlanId}/meals/{meal.Id}", meal);
     }
+
+    private static async Task<IResult> AssignPlan(
+        Guid id,
+        AssignPlanRequest request,
+        IPlannerRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        var planFamilyId = await repository.GetPlanFamilyIdAsync(id);
+        if (planFamilyId is null || planFamilyId != member.FamilyId)
+            return Results.NotFound(new { error = "Plan not found." });
+
+        var plan = await repository.AssignPlanAsync(id, request.AssignedTo, request.AssignedName);
+        return Results.Ok(plan);
+    }
 }
+
+public record AssignPlanRequest(string? AssignedTo, string? AssignedName);

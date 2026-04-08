@@ -82,7 +82,8 @@
     "randomNextWeek": "Atsitiktinai kitą savaitę",
     "randomWeekAfter": "Atsitiktinai po dviejų savaičių",
     "random30Days": "Atsitiktinai per 30 dienų",
-    "random6Months": "Atsitiktinai per 6 mėnesius"
+    "random6Months": "Atsitiktinai per 6 mėnesius",
+    "unassigned": "Nepriskirta"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",
