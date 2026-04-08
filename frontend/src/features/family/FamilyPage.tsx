@@ -4,11 +4,14 @@ import {
   Box,
   Button,
   TextField,
-  Paper,
+  Card,
+  CardContent,
   List,
   ListItem,
   ListItemText,
+  ListItemAvatar,
   ListItemSecondaryAction,
+  Avatar,
   IconButton,
   Alert,
   Chip,
@@ -20,6 +23,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  alpha,
 } from "@mui/material";
 import { ContentCopy, PersonRemove, Refresh, ExitToApp, ArrowUpward } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -159,7 +163,7 @@ export default function FamilyPage() {
   if (currentView === "create") {
     return (
       <Box maxWidth={400} mx="auto" mt={4}>
-        <Paper sx={{ p: 3 }}>
+        <Card><CardContent sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             {t("family.create")}
           </Typography>
@@ -198,7 +202,7 @@ export default function FamilyPage() {
               </Button>
             </Box>
           </Box>
-        </Paper>
+        </CardContent></Card>
       </Box>
     );
   }
@@ -206,7 +210,7 @@ export default function FamilyPage() {
   if (currentView === "join") {
     return (
       <Box maxWidth={400} mx="auto" mt={4}>
-        <Paper sx={{ p: 3 }}>
+        <Card><CardContent sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
             {t("family.join")}
           </Typography>
@@ -245,7 +249,7 @@ export default function FamilyPage() {
               </Button>
             </Box>
           </Box>
-        </Paper>
+        </CardContent></Card>
       </Box>
     );
   }
@@ -254,70 +258,99 @@ export default function FamilyPage() {
   const family = familyData!.family;
   const members = familyData!.members;
 
+  const memberColours = [
+    "#2e7d32", "#1565c0", "#c62828", "#6a1b9a",
+    "#e65100", "#00838f", "#4e342e", "#37474f",
+  ];
+
+  const getMemberColour = (index: number) =>
+    memberColours[index % memberColours.length];
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+
   return (
-    <Box maxWidth={600} mx="auto">
+    <Box>
       <Typography variant="h4" gutterBottom>
         {family.name}
       </Typography>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-          <Typography variant="body2" color="text.secondary">
-            {t("family.inviteCode")}:
+      <Card sx={{ mb: 3, bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
+        <CardContent>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            {t("family.inviteCode")}
           </Typography>
-          <Chip label={family.inviteCode} variant="outlined" />
-          <Tooltip title={codeCopied ? t("family.codeCopied") : t("family.copyLink")}>
-            <IconButton
+          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+            <Chip
+              label={family.inviteCode}
+              color="primary"
+              variant="outlined"
+              sx={{ fontFamily: "monospace", fontSize: "1rem", letterSpacing: "0.1em", py: 0.5 }}
+            />
+            <Button
               size="small"
+              variant="contained"
+              startIcon={<ContentCopy />}
               onClick={() => handleCopyLink(family.inviteCode)}
             >
-              <ContentCopy fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {isOwner && (
-            <Tooltip title={t("family.regenerateCode")}>
-              <IconButton
-                size="small"
-                onClick={() => regenerateMutation.mutate()}
-                disabled={regenerateMutation.isPending}
-              >
-                <Refresh fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      </Paper>
+              {codeCopied ? t("family.codeCopied") : t("family.copyLink")}
+            </Button>
+            {isOwner && (
+              <Tooltip title={t("family.regenerateCode")}>
+                <IconButton
+                  size="small"
+                  onClick={() => regenerateMutation.mutate()}
+                  disabled={regenerateMutation.isPending}
+                >
+                  <Refresh fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
 
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         {t("family.members")} ({members.length})
       </Typography>
-      <Paper>
-        <List>
+      <Card>
+        <List disablePadding>
           {members.map((member, index) => (
             <Box key={member.id}>
               {index > 0 && <Divider />}
-              <ListItem>
+              <ListItem sx={{ py: 1.5 }}>
+                <ListItemAvatar>
+                  <Avatar sx={{ bgcolor: getMemberColour(index), width: 36, height: 36, fontSize: "0.85rem" }}>
+                    {getInitials(member.displayName)}
+                  </Avatar>
+                </ListItemAvatar>
                 <ListItemText
-                  primary={member.displayName}
-                  secondary={
-                    member.role === "owner" ? t("family.owner") : t("family.member")
+                  primary={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography fontWeight={500}>{member.displayName}</Typography>
+                      {member.role === "owner" && (
+                        <Chip label={t("family.owner")} size="small" color="primary" variant="outlined" />
+                      )}
+                    </Box>
                   }
                 />
                 {isOwner && member.role !== "owner" && (
                   <ListItemSecondaryAction>
                     <Tooltip title={t("family.promote")}>
                       <IconButton
+                        size="small"
                         onClick={() => promoteMutation.mutate(member.userId)}
                         disabled={promoteMutation.isPending}
                       >
-                        <ArrowUpward />
+                        <ArrowUpward fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <IconButton
+                      size="small"
                       edge="end"
                       onClick={() => setMemberToRemove({ userId: member.userId, displayName: member.displayName })}
                     >
-                      <PersonRemove />
+                      <PersonRemove fontSize="small" />
                     </IconButton>
                   </ListItemSecondaryAction>
                 )}
@@ -325,7 +358,7 @@ export default function FamilyPage() {
             </Box>
           ))}
         </List>
-      </Paper>
+      </Card>
 
       <Button
         variant="outlined"

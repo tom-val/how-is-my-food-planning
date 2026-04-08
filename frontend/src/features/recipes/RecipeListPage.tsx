@@ -62,24 +62,33 @@ export default function RecipeListPage() {
       </Box>
 
       {!recipes?.length ? (
-        <Typography color="text.secondary">{t("recipes.empty")}</Typography>
+        <Box sx={{ textAlign: "center", py: 6 }}>
+          <Typography color="text.secondary" variant="body1">
+            {t("recipes.empty")}
+          </Typography>
+        </Box>
       ) : (
         <Box display="flex" flexDirection="column" gap={1.5}>
           {recipes.map(({ recipe, ingredients }) => (
-            <Card key={recipe.id} variant="outlined">
+            <Card key={recipe.id}>
               <CardActionArea
                 onClick={() => navigate(`/recipes/${recipe.id}`)}
-                sx={{ display: "flex", justifyContent: "flex-start" }}
               >
-                <CardContent sx={{ width: "100%" }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                <CardContent sx={{ py: 2 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
                     <Typography variant="h6">{recipe.name}</Typography>
                     <Chip
-                      label={`${ingredients.length} ${t("recipes.ingredients").toLowerCase()}`}
+                      label={`${ingredients.length}`}
                       size="small"
+                      color="primary"
                       variant="outlined"
                     />
                   </Box>
+                  {ingredients.length > 0 && (
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {ingredients.map((i) => i.name).join(", ")}
+                    </Typography>
+                  )}
                 </CardContent>
               </CardActionArea>
             </Card>

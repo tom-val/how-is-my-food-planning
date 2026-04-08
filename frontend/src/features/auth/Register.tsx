@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import {
-  Container,
-  Paper,
+  Card,
+  CardContent,
   TextField,
   Button,
   Typography,
   Box,
   Alert,
   Link,
+  Divider,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
+import { AuthPageLayout } from "./AuthPageLayout";
 
 export default function Register() {
   const { t } = useTranslation();
@@ -55,24 +57,83 @@ export default function Register() {
 
   if (needsConfirmation) {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Paper sx={{ p: 4 }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            {t("auth.confirm")}
+      <AuthPageLayout>
+        <Card>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+            <Typography variant="h5" align="center" gutterBottom fontWeight={600}>
+              {t("auth.confirm")}
+            </Typography>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Box component="form" onSubmit={handleConfirm}>
+              <TextField
+                fullWidth
+                label={t("auth.confirmCode")}
+                value={confirmationCode}
+                onChange={(e) => setConfirmationCode(e.target.value)}
+                margin="normal"
+                required
+              />
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isSubmitting}
+                sx={{ mt: 2 }}
+              >
+                {t("auth.confirm")}
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </AuthPageLayout>
+    );
+  }
+
+  return (
+    <AuthPageLayout>
+      <Card>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Typography variant="h5" align="center" gutterBottom fontWeight={600}>
+            {t("auth.register")}
           </Typography>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
-          <Box component="form" onSubmit={handleConfirm}>
+          <Box component="form" onSubmit={handleSignUp}>
             <TextField
               fullWidth
-              label={t("auth.confirmCode")}
-              value={confirmationCode}
-              onChange={(e) => setConfirmationCode(e.target.value)}
+              label={t("auth.displayName")}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
               margin="normal"
               required
+            />
+            <TextField
+              fullWidth
+              label={t("auth.email")}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              margin="normal"
+              required
+              autoComplete="email"
+            />
+            <TextField
+              fullWidth
+              label={t("auth.password")}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              margin="normal"
+              required
+              autoComplete="new-password"
             />
             <Button
               fullWidth
@@ -82,72 +143,18 @@ export default function Register() {
               disabled={isSubmitting}
               sx={{ mt: 2 }}
             >
-              {t("auth.confirm")}
+              {t("auth.register")}
             </Button>
           </Box>
-        </Paper>
-      </Container>
-    );
-  }
-
-  return (
-    <Container maxWidth="xs" sx={{ mt: 8 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          {t("auth.register")}
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <Box component="form" onSubmit={handleSignUp}>
-          <TextField
-            fullWidth
-            label={t("auth.displayName")}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label={t("auth.email")}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            margin="normal"
-            required
-            autoComplete="email"
-          />
-          <TextField
-            fullWidth
-            label={t("auth.password")}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            margin="normal"
-            required
-            autoComplete="new-password"
-          />
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={isSubmitting}
-            sx={{ mt: 2 }}
-          >
-            {t("auth.register")}
-          </Button>
-        </Box>
-        <Typography align="center" sx={{ mt: 2 }}>
-          {t("auth.hasAccount")}{" "}
-          <Link component={RouterLink} to="/login">
-            {t("auth.login")}
-          </Link>
-        </Typography>
-      </Paper>
-    </Container>
+          <Divider sx={{ my: 2 }} />
+          <Typography align="center" variant="body2" color="text.secondary">
+            {t("auth.hasAccount")}{" "}
+            <Link component={RouterLink} to="/login" fontWeight={600}>
+              {t("auth.login")}
+            </Link>
+          </Typography>
+        </CardContent>
+      </Card>
+    </AuthPageLayout>
   );
 }

@@ -6,10 +6,12 @@ import {
   Button,
   CircularProgress,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -79,28 +81,29 @@ export default function RecipeDetailPage() {
         </Box>
       </Box>
 
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         {t("recipes.ingredients")} ({ingredients.length})
       </Typography>
-      <Paper>
-        <List>
-          {ingredients.map((ingredient, index) => (
-            <Box key={ingredient.id}>
-              {index > 0 && <Divider />}
-              <ListItem>
-                <ListItemText
-                  primary={ingredient.name}
-                  secondary={
-                    [ingredient.quantity, ingredient.unit]
-                      .filter(Boolean)
-                      .join(" ") || undefined
-                  }
-                />
-              </ListItem>
-            </Box>
-          ))}
-        </List>
-      </Paper>
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 600 }}>{t("recipes.ingredientName")}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }} align="right">{t("recipes.quantity")}</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>{t("recipes.unit")}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {ingredients.map((ingredient) => (
+              <TableRow key={ingredient.id} sx={{ "&:last-child td": { border: 0 } }}>
+                <TableCell>{ingredient.name}</TableCell>
+                <TableCell align="right">{ingredient.quantity ?? "—"}</TableCell>
+                <TableCell>{ingredient.unit ?? ""}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {recipe.instructions && (
         <Paper sx={{ p: 2, mt: 3 }}>

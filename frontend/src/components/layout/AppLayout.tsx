@@ -14,6 +14,9 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Avatar,
+  Chip,
+  alpha,
 } from "@mui/material";
 import {
   CalendarMonth,
@@ -21,12 +24,13 @@ import {
   ShoppingCart,
   People,
   Logout,
+  Restaurant,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { LanguageSwitcher } from "../shared/LanguageSwitcher";
 
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH = 260;
 
 const navItems = [
   { path: "/planner", labelKey: "nav.planner", icon: <CalendarMonth /> },
@@ -34,6 +38,15 @@ const navItems = [
   { path: "/shopping", labelKey: "nav.shopping", icon: <ShoppingCart /> },
   { path: "/family", labelKey: "nav.family", icon: <People /> },
 ];
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -54,17 +67,37 @@ export function AppLayout() {
         sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}
       >
         <Toolbar>
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
-            {t("app.title")}
-          </Typography>
+          {isMobile && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
+              <Restaurant />
+              <Typography variant="h6" noWrap fontWeight={700}>
+                {t("app.title")}
+              </Typography>
+            </Box>
+          )}
+          {!isMobile && <Box sx={{ flexGrow: 1 }} />}
+
           {user && (
-            <Typography variant="body2" sx={{ mr: 1 }}>
-              {user.displayName}
-            </Typography>
+            <Chip
+              avatar={
+                <Avatar sx={{ bgcolor: "primary.dark", width: 28, height: 28, fontSize: "0.75rem" }}>
+                  {getInitials(user.displayName)}
+                </Avatar>
+              }
+              label={user.displayName}
+              variant="outlined"
+              size="small"
+              sx={{
+                mr: 1,
+                color: "inherit",
+                borderColor: (t) => alpha(t.palette.common.white, 0.3),
+                "& .MuiChip-avatar": { color: "white" },
+              }}
+            />
           )}
           <LanguageSwitcher />
-          <IconButton color="inherit" onClick={signOut} title={t("auth.signOut")}>
-            <Logout />
+          <IconButton color="inherit" onClick={signOut} title={t("auth.signOut")} size="small">
+            <Logout fontSize="small" />
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -85,15 +118,37 @@ export function AppLayout() {
             }}
           >
             <Toolbar />
-            <List>
+            <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                }}
+              >
+                <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
+                  <Restaurant fontSize="small" />
+                </Avatar>
+                <Typography variant="h6" fontWeight={700} color="primary.dark">
+                  {t("app.title")}
+                </Typography>
+              </Box>
+            </Box>
+            <List sx={{ px: 1, pt: 1 }}>
               {navItems.map((item) => (
                 <ListItemButton
                   key={item.path}
                   selected={location.pathname.startsWith(item.path)}
                   onClick={() => navigate(item.path)}
                 >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={t(item.labelKey)} />
+                  <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                  <ListItemText
+                    primary={t(item.labelKey)}
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
                 </ListItemButton>
               ))}
             </List>
@@ -104,8 +159,11 @@ export function AppLayout() {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 2,
-            pb: isMobile ? 10 : 2,
+            p: { xs: 2, md: 3 },
+            pb: isMobile ? 10 : 3,
+            maxWidth: 900,
+            mx: "auto",
+            width: "100%",
           }}
         >
           <Outlet />
@@ -123,8 +181,6 @@ export function AppLayout() {
             left: 0,
             right: 0,
             zIndex: theme.zIndex.appBar,
-            borderTop: 1,
-            borderColor: "divider",
           }}
         >
           {navItems.map((item) => (

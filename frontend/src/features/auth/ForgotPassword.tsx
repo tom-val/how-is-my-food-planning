@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
-  Container,
-  Paper,
+  Card,
+  CardContent,
   TextField,
   Button,
   Typography,
@@ -15,6 +15,7 @@ import {
   CognitoUser,
 } from "amazon-cognito-identity-js";
 import { getCognitoUserPool } from "../../providers/AuthProvider";
+import { AuthPageLayout } from "./AuthPageLayout";
 
 type Stage = "requestCode" | "resetPassword" | "done";
 
@@ -83,8 +84,8 @@ export default function ForgotPassword() {
 
   if (stage === "done") {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Paper sx={{ p: 4 }}>
+      <AuthPageLayout>
+        <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Typography variant="h5" align="center" gutterBottom>
             {t("auth.passwordReset")}
           </Typography>
@@ -99,15 +100,15 @@ export default function ForgotPassword() {
           >
             {t("auth.login")}
           </Button>
-        </Paper>
-      </Container>
+        </CardContent></Card>
+      </AuthPageLayout>
     );
   }
 
   if (stage === "resetPassword") {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Paper sx={{ p: 4 }}>
+      <AuthPageLayout>
+        <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Typography variant="h5" align="center" gutterBottom>
             {t("auth.newPassword")}
           </Typography>
@@ -146,15 +147,15 @@ export default function ForgotPassword() {
               {t("auth.resetPassword")}
             </Button>
           </Box>
-        </Paper>
-      </Container>
+        </CardContent></Card>
+      </AuthPageLayout>
     );
   }
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h5" align="center" gutterBottom>
+    <AuthPageLayout>
+      <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+        <Typography variant="h5" align="center" gutterBottom fontWeight={600}>
           {t("auth.forgotPassword")}
         </Typography>
         {error && (
@@ -185,11 +186,11 @@ export default function ForgotPassword() {
           </Button>
         </Box>
         <Typography align="center" sx={{ mt: 2 }}>
-          <Link component={RouterLink} to="/login">
+          <Link component={RouterLink} to="/login" variant="body2">
             {t("auth.backToLogin")}
           </Link>
         </Typography>
-      </Paper>
-    </Container>
+      </CardContent></Card>
+    </AuthPageLayout>
   );
 }
