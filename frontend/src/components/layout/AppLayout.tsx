@@ -37,7 +37,7 @@ const navItems = [
 
 export function AppLayout() {
   const { t } = useTranslation();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -57,6 +57,11 @@ export function AppLayout() {
           <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
             {t("app.title")}
           </Typography>
+          {user && (
+            <Typography variant="body2" sx={{ mr: 1 }}>
+              {user.displayName}
+            </Typography>
+          )}
           <LanguageSwitcher />
           <IconButton color="inherit" onClick={signOut} title={t("auth.signOut")}>
             <Logout />

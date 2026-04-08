@@ -32,6 +32,7 @@ export function getCognitoUserPool(): CognitoUserPool | null {
 export interface AuthUser {
   sub: string;
   email: string;
+  displayName: string;
 }
 
 export interface AuthContextValue {
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       sub: payload.sub,
       email: payload.email,
+      displayName: payload.name ?? payload.email,
     };
   }, []);
 
