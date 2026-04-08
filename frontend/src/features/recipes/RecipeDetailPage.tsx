@@ -20,11 +20,13 @@ import {
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRecipe, deleteRecipe } from "../../api/recipeApi";
 
 export default function RecipeDetailPage() {
   const { t } = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -40,6 +42,7 @@ export default function RecipeDetailPage() {
     mutationFn: () => deleteRecipe(id!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      enqueueSnackbar(t("recipes.deleted"), { variant: "success" });
       navigate("/recipes");
     },
   });

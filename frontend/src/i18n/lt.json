@@ -66,7 +66,9 @@
     "empty": "Dar nėra receptų",
     "notFound": "Receptas nerastas",
     "deleteConfirmTitle": "Ištrinti receptą?",
-    "deleteConfirmMessage": "Ar tikrai norite ištrinti {{name}}?"
+    "deleteConfirmMessage": "Ar tikrai norite ištrinti {{name}}?",
+    "saved": "Receptas išsaugotas",
+    "deleted": "Receptas ištrintas"
   },
   "planner": {
     "title": "Savaitės planas",

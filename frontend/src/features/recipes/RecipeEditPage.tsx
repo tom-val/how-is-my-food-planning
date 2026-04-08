@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Typography, Box, CircularProgress, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRecipe, updateRecipe } from "../../api/recipeApi";
 import { RecipeForm } from "./RecipeForm";
@@ -9,6 +10,7 @@ import type { IngredientInput } from "../../api/recipeApi";
 
 export default function RecipeEditPage() {
   const { t } = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,6 +33,7 @@ export default function RecipeEditPage() {
     }) => updateRecipe(id!, name, instructions, ingredients),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      enqueueSnackbar(t("recipes.saved"), { variant: "success" });
       navigate(`/recipes/${id}`);
     },
   });
