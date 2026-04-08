@@ -1,5 +1,6 @@
 using Amazon.Lambda.AspNetCoreServer;
 using FluentValidation;
+using FoodPlanning.Api.Features.Families;
 using FoodPlanning.Api.Shared;
 using FoodPlanning.Api.Shared.Database;
 using FoodPlanning.Api.Shared.Middleware;
@@ -44,6 +45,10 @@ builder.Services.AddCors(options =>
 // FluentValidation.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+// Repositories and services.
+builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
+builder.Services.AddScoped<IFamilyMembershipService, FamilyMembershipService>();
+
 var app = builder.Build();
 
 // Middleware pipeline.
@@ -59,5 +64,6 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
 
 // Routes.
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapFamilyEndpoints();
 
 app.Run();

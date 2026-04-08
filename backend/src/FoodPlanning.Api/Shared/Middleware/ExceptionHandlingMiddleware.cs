@@ -1,3 +1,5 @@
+using FoodPlanning.Api.Features.Families;
+
 namespace FoodPlanning.Api.Shared.Middleware;
 
 public class ExceptionHandlingMiddleware
@@ -21,6 +23,11 @@ public class ExceptionHandlingMiddleware
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(new { error = "Unauthorised." });
+        }
+        catch (FamilyMembershipException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
         catch (Exception ex)
         {

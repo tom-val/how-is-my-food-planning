@@ -34,7 +34,11 @@
     "inviteCode": "Invite Code",
     "members": "Members",
     "copyCode": "Copy Code",
-    "noFamily": "You don't belong to a family yet"
+    "codeCopied": "Copied!",
+    "noFamily": "You don't belong to a family yet",
+    "owner": "Owner",
+    "member": "Member",
+    "regenerateCode": "Regenerate Code"
   },
   "recipes": {
     "title": "Recipes",

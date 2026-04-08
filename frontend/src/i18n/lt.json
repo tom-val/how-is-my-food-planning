@@ -34,7 +34,11 @@
     "inviteCode": "Kvietimo kodas",
     "members": "Nariai",
     "copyCode": "Kopijuoti kodą",
-    "noFamily": "Jūs dar nepriklausote šeimai"
+    "codeCopied": "Nukopijuota!",
+    "noFamily": "Jūs dar nepriklausote šeimai",
+    "owner": "Savininkas",
+    "member": "Narys",
+    "regenerateCode": "Sugeneruoti naują kodą"
   },
   "recipes": {
     "title": "Receptai",
