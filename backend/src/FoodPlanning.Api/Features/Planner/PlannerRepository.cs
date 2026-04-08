@@ -26,6 +26,7 @@ public interface IPlannerRepository
     Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId);
     Task<bool> RemoveMealAsync(Guid planId, Guid mealId);
     Task<Guid?> GetPlanFamilyIdAsync(Guid planId);
+    Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId);
 }
 
 public class PlannerRepository : IPlannerRepository
@@ -144,6 +145,20 @@ public class PlannerRepository : IPlannerRepository
 
         var result = await cmd.ExecuteScalarAsync();
         return result is Guid familyId ? familyId : null;
+    }
+
+    public async Task<PlannedMeal> ScheduleMealAsync(
+        Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId)
+    {
+        // Calculate the Monday of the target week and the day index (0=Mon).
+        var dayOfWeekIndex = ((int)date.DayOfWeek + 6) % 7; // Convert Sun=0 to Mon=0
+        var monday = date.AddDays(-dayOfWeekIndex);
+
+        // Get or create the plan for that week.
+        var planWithMeals = await GetOrCreateAsync(familyId, monday, userId);
+
+        // Add the meal.
+        return await AddMealAsync(planWithMeals.Plan.Id, dayOfWeekIndex, mealType, recipeId);
     }
 
     private static async Task<List<PlannedMeal>> GetMealsAsync(NpgsqlConnection conn, Guid planId)

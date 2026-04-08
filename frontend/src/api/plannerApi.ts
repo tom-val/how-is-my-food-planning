@@ -51,6 +51,19 @@ export async function removeMeal(
   await apiClient.delete(`/v1/plans/${planId}/meals/${mealId}`);
 }
 
+export async function scheduleMeal(
+  date: string,
+  mealType: string,
+  recipeId: string,
+): Promise<PlannedMeal> {
+  const { data } = await apiClient.post<PlannedMeal>("/v1/plans/schedule", {
+    date,
+    mealType,
+    recipeId,
+  });
+  return data;
+}
+
 /** Get the Monday of the week containing the given date. */
 export function getMonday(date: Date): string {
   const d = new Date(date);

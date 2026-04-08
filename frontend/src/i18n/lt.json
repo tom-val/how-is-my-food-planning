@@ -75,7 +75,14 @@
     "lunch": "Pietūs",
     "dinner": "Vakarienė",
     "snack": "Užkandis",
-    "today": "Šiandien"
+    "today": "Šiandien",
+    "searchRecipes": "Ieškoti recepto...",
+    "scheduleTitle": "Planuoti: {{name}}",
+    "sameDayNextWeek": "Tą pačią dieną kitą savaitę",
+    "randomNextWeek": "Atsitiktinai kitą savaitę",
+    "randomWeekAfter": "Atsitiktinai po dviejų savaičių",
+    "random30Days": "Atsitiktinai per 30 dienų",
+    "random6Months": "Atsitiktinai per 6 mėnesius"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",

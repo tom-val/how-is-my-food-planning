@@ -13,6 +13,7 @@ public static class PlannerEndpoints
         group.MapGet("/", GetPlan);
         group.MapPost("/{id:guid}/meals", AddMeal);
         group.MapDelete("/{id:guid}/meals/{mealId:guid}", RemoveMeal);
+        group.MapPost("/schedule", ScheduleMeal);
     }
 
     private static async Task<IResult> GetPlan(
@@ -76,5 +77,26 @@ public static class PlannerEndpoints
         return removed
             ? Results.NoContent()
             : Results.NotFound(new { error = "Meal not found." });
+    }
+
+    private static async Task<IResult> ScheduleMeal(
+        ScheduleMealRequest request,
+        IValidator<ScheduleMealRequest> validator,
+        IPlannerRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var validation = await validator.ValidateAsync(request);
+        if (!validation.IsValid)
+            return Results.ValidationProblem(validation.ToDictionary());
+
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+        var date = DateOnly.Parse(request.Date);
+
+        var meal = await repository.ScheduleMealAsync(
+            member.FamilyId, userId, date, request.MealType, request.RecipeId);
+
+        return Results.Created($"/v1/plans/{meal.WeeklyPlanId}/meals/{meal.Id}", meal);
     }
 }

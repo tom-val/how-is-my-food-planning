@@ -75,7 +75,14 @@
     "lunch": "Lunch",
     "dinner": "Dinner",
     "snack": "Snack",
-    "today": "Today"
+    "today": "Today",
+    "searchRecipes": "Search recipes...",
+    "scheduleTitle": "Schedule: {{name}}",
+    "sameDayNextWeek": "Same day next week",
+    "randomNextWeek": "Random day next week",
+    "randomWeekAfter": "Random day week after next",
+    "random30Days": "Random day within 30 days",
+    "random6Months": "Random day within 6 months"
   },
   "shopping": {
     "title": "Shopping List",
