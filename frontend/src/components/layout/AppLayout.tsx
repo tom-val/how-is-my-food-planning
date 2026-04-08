@@ -138,7 +138,7 @@ export function AppLayout() {
           sx={{
             flexGrow: 1,
             p: { xs: 2, md: 3 },
-            pb: isMobile ? 12 : 3,
+            pb: isMobile ? 14 : 3,
             maxWidth: 900,
             mx: "auto",
             width: "100%",
