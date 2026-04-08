@@ -106,6 +106,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",
-    "error": "Error"
+    "error": "Error",
+    "print": "Print"
   }
 }

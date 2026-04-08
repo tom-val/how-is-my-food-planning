@@ -29,6 +29,7 @@ import {
   Today,
   Shuffle,
   CalendarMonth,
+  Print,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -203,7 +204,7 @@ export default function PlannerPage() {
         alignItems="center"
         mb={2}
       >
-        <IconButton onClick={() => setWeekOffset((o) => o - 1)}>
+        <IconButton onClick={() => setWeekOffset((o) => o - 1)} className="no-print">
           <ChevronLeft />
         </IconButton>
         <Box textAlign="center">
@@ -212,18 +213,25 @@ export default function PlannerPage() {
             {weekLabel}
           </Typography>
         </Box>
-        <IconButton onClick={() => setWeekOffset((o) => o + 1)}>
+        <IconButton onClick={() => setWeekOffset((o) => o + 1)} className="no-print">
           <ChevronRight />
         </IconButton>
       </Box>
 
-      {weekOffset !== 0 && (
-        <Box display="flex" justifyContent="center" mb={2}>
+      <Box display="flex" justifyContent="flex-end" mb={2} gap={1} className="no-print">
+        {weekOffset !== 0 && (
           <Button size="small" onClick={() => setWeekOffset(0)}>
             {t("planner.today")}
           </Button>
-        </Box>
-      )}
+        )}
+        <Button
+          size="small"
+          startIcon={<Print />}
+          onClick={() => window.print()}
+        >
+          {t("common.print")}
+        </Button>
+      </Box>
 
       {/* Day cards */}
       <Box display="flex" flexDirection="column" gap={2}>

@@ -33,7 +33,8 @@ public static class ShoppingEndpoints
         if (items.Count == 0)
             items = await repository.GenerateAsync(id);
 
-        return Results.Ok(items);
+        var mappings = await repository.GetRecipeMappingsAsync(id);
+        return Results.Ok(new ShoppingListResponse(items, mappings));
     }
 
     private static async Task<IResult> GenerateShoppingList(
@@ -51,7 +52,8 @@ public static class ShoppingEndpoints
             return Results.NotFound(new { error = "Plan not found." });
 
         var items = await repository.GenerateAsync(id);
-        return Results.Ok(items);
+        var mappings = await repository.GetRecipeMappingsAsync(id);
+        return Results.Ok(new ShoppingListResponse(items, mappings));
     }
 
     private static async Task<IResult> ToggleItem(

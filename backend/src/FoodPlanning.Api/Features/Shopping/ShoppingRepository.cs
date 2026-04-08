@@ -14,11 +14,16 @@ public record ShoppingListItem(
 
 public record AggregatedIngredient(string Name, decimal? TotalQuantity, string? Unit);
 
+public record IngredientRecipeMapping(string IngredientName, string? Unit, string RecipeName);
+
+public record ShoppingListResponse(List<ShoppingListItem> Items, List<IngredientRecipeMapping> RecipeMappings);
+
 public interface IShoppingRepository
 {
     Task<List<ShoppingListItem>> GetByPlanIdAsync(Guid planId);
     Task<List<ShoppingListItem>> GenerateAsync(Guid planId);
     Task<bool> ToggleItemAsync(Guid itemId, bool isChecked, string userId);
+    Task<List<IngredientRecipeMapping>> GetRecipeMappingsAsync(Guid planId);
 }
 
 public class ShoppingRepository : IShoppingRepository
@@ -135,6 +140,35 @@ public class ShoppingRepository : IShoppingRepository
         cmd.Parameters.AddWithValue("userId", userId);
 
         return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<List<IngredientRecipeMapping>> GetRecipeMappingsAsync(Guid planId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            SELECT DISTINCT ri.name, ri.unit, r.name AS recipe_name
+            FROM planned_meals pm
+            JOIN recipe_ingredients ri ON ri.recipe_id = pm.recipe_id
+            JOIN recipes r ON r.id = pm.recipe_id
+            WHERE pm.weekly_plan_id = @planId
+            ORDER BY ri.name, r.name
+            """, conn);
+        cmd.Parameters.AddWithValue("planId", planId);
+
+        var mappings = new List<IngredientRecipeMapping>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            mappings.Add(new IngredientRecipeMapping(
+                reader.GetString(0),
+                reader.IsDBNull(1) ? null : reader.GetString(1),
+                reader.GetString(2)));
+        }
+
+        return mappings;
     }
 
     private static async Task<List<AggregatedIngredient>> AggregateIngredientsAsync(

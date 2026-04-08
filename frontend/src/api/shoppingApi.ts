@@ -10,10 +10,21 @@ export interface ShoppingListItem {
   checkedBy: string | null;
 }
 
+export interface IngredientRecipeMapping {
+  ingredientName: string;
+  unit: string | null;
+  recipeName: string;
+}
+
+export interface ShoppingListResponse {
+  items: ShoppingListItem[];
+  recipeMappings: IngredientRecipeMapping[];
+}
+
 export async function getShoppingList(
   planId: string,
-): Promise<ShoppingListItem[]> {
-  const { data } = await apiClient.get<ShoppingListItem[]>(
+): Promise<ShoppingListResponse> {
+  const { data } = await apiClient.get<ShoppingListResponse>(
     `/v1/plans/${planId}/shopping-list`,
   );
   return data;
@@ -21,8 +32,8 @@ export async function getShoppingList(
 
 export async function generateShoppingList(
   planId: string,
-): Promise<ShoppingListItem[]> {
-  const { data } = await apiClient.post<ShoppingListItem[]>(
+): Promise<ShoppingListResponse> {
+  const { data } = await apiClient.post<ShoppingListResponse>(
     `/v1/plans/${planId}/shopping-list/generate`,
   );
   return data;

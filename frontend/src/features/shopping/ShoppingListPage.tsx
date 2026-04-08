@@ -19,7 +19,7 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
-import { Refresh, ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { Refresh, ChevronLeft, ChevronRight, Print } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,6 +27,7 @@ import {
   generateShoppingList,
   toggleItem,
 } from "../../api/shoppingApi";
+import type { ShoppingListResponse } from "../../api/shoppingApi";
 import { getPlan, getMonday } from "../../api/plannerApi";
 
 export default function ShoppingListPage() {
@@ -57,27 +58,45 @@ export default function ShoppingListPage() {
 
   const planId = planData?.plan.id;
 
-  const {
-    data: items,
-    isLoading: isItemsLoading,
-  } = useQuery({
+  const { data: shoppingData, isLoading: isItemsLoading } = useQuery({
     queryKey: ["shopping-list", planId],
     queryFn: () => getShoppingList(planId!),
     enabled: !!planId,
   });
 
+  const items = shoppingData?.items;
+  const recipeMappings = shoppingData?.recipeMappings ?? [];
+
+  const getRecipesForIngredient = (ingredientName: string, unit: string | null): string[] => {
+    return recipeMappings
+      .filter(
+        (m) =>
+          m.ingredientName.toLowerCase() === ingredientName.toLowerCase() &&
+          (m.unit?.toLowerCase() ?? "") === (unit?.toLowerCase() ?? ""),
+      )
+      .map((m) => m.recipeName);
+  };
+
   const toggleMutation = useMutation({
     mutationFn: ({ itemId, isChecked }: { itemId: string; isChecked: boolean }) =>
       toggleItem(itemId, isChecked),
     onMutate: async ({ itemId, isChecked }) => {
-      // Optimistic update.
       await queryClient.cancelQueries({ queryKey: ["shopping-list", planId] });
       queryClient.setQueryData(
         ["shopping-list", planId],
-        (old: typeof items) =>
-          old
-            ?.map((i) => (i.id === itemId ? { ...i, isChecked } : i))
-            .sort((a, b) => Number(a.isChecked) - Number(b.isChecked) || a.ingredientName.localeCompare(b.ingredientName)),
+        (old: ShoppingListResponse | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items
+              .map((i) => (i.id === itemId ? { ...i, isChecked } : i))
+              .sort(
+                (a, b) =>
+                  Number(a.isChecked) - Number(b.isChecked) ||
+                  a.ingredientName.localeCompare(b.ingredientName),
+              ),
+          };
+        },
       );
     },
     onSettled: () => {
@@ -87,8 +106,8 @@ export default function ShoppingListPage() {
 
   const regenerateMutation = useMutation({
     mutationFn: () => generateShoppingList(planId!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(["shopping-list", planId], data);
       setIsRefreshDialogOpen(false);
     },
   });
@@ -109,7 +128,7 @@ export default function ShoppingListPage() {
     <Box>
       {/* Week navigation */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <IconButton onClick={() => setWeekOffset((o) => o - 1)}>
+        <IconButton onClick={() => setWeekOffset((o) => o - 1)} className="no-print">
           <ChevronLeft />
         </IconButton>
         <Box textAlign="center">
@@ -118,36 +137,48 @@ export default function ShoppingListPage() {
             {weekLabel}
           </Typography>
         </Box>
-        <IconButton onClick={() => setWeekOffset((o) => o + 1)}>
+        <IconButton onClick={() => setWeekOffset((o) => o + 1)} className="no-print">
           <ChevronRight />
         </IconButton>
       </Box>
 
       {weekOffset !== 0 && (
-        <Box display="flex" justifyContent="center" mb={2}>
+        <Box display="flex" justifyContent="center" mb={2} className="no-print">
           <Button size="small" onClick={() => setWeekOffset(0)}>
             {t("planner.today")}
           </Button>
         </Box>
       )}
 
-      {/* Summary + refresh */}
+      {/* Summary + actions */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        {totalCount > 0 && (
+        {totalCount > 0 ? (
           <Chip
             label={`${checkedCount} / ${totalCount}`}
             color={checkedCount === totalCount ? "success" : "default"}
             variant="outlined"
           />
+        ) : (
+          <Box />
         )}
-        <Button
-          size="small"
-          startIcon={<Refresh />}
-          onClick={() => setIsRefreshDialogOpen(true)}
-          disabled={!planId}
-        >
-          {t("shopping.refresh")}
-        </Button>
+        <Box display="flex" gap={1} className="no-print">
+          <Button
+            size="small"
+            startIcon={<Print />}
+            onClick={() => window.print()}
+            disabled={!items?.length}
+          >
+            {t("common.print")}
+          </Button>
+          <Button
+            size="small"
+            startIcon={<Refresh />}
+            onClick={() => setIsRefreshDialogOpen(true)}
+            disabled={!planId}
+          >
+            {t("shopping.refresh")}
+          </Button>
+        </Box>
       </Box>
 
       {/* List */}
@@ -158,39 +189,81 @@ export default function ShoppingListPage() {
       ) : (
         <Card>
           <List disablePadding>
-            {items.map((item, index) => (
-              <Box key={item.id}>
-                {index > 0 && <Divider />}
-                <ListItem
-                  sx={{
-                    opacity: item.isChecked ? 0.5 : 1,
-                    textDecoration: item.isChecked ? "line-through" : "none",
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    <Checkbox
-                      edge="start"
-                      checked={item.isChecked}
-                      onChange={() =>
-                        toggleMutation.mutate({
-                          itemId: item.id,
-                          isChecked: !item.isChecked,
-                        })
+            {items.map((item, index) => {
+              const recipes = getRecipesForIngredient(item.ingredientName, item.unit);
+              return (
+                <Box key={item.id}>
+                  {index > 0 && <Divider />}
+                  <ListItem
+                    sx={{
+                      opacity: item.isChecked ? 0.5 : 1,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+                      <Checkbox
+                        edge="start"
+                        checked={item.isChecked}
+                        onChange={() =>
+                          toggleMutation.mutate({
+                            itemId: item.id,
+                            isChecked: !item.isChecked,
+                          })
+                        }
+                        color="primary"
+                        className="no-print"
+                      />
+                      {/* Print-only empty checkbox */}
+                      <Box
+                        className="print-only"
+                        sx={{
+                          width: 14,
+                          height: 14,
+                          border: "1.5px solid #333",
+                          borderRadius: 0.5,
+                        }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            textDecoration: item.isChecked ? "line-through" : "none",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {item.ingredientName}
+                          {item.totalQuantity != null && (
+                            <Typography
+                              component="span"
+                              color="text.secondary"
+                              sx={{ ml: 1 }}
+                            >
+                              {item.totalQuantity} {item.unit ?? ""}
+                            </Typography>
+                          )}
+                        </Typography>
                       }
-                      color="primary"
+                      secondary={
+                        recipes.length > 0 && (
+                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
+                            {recipes.map((name) => (
+                              <Chip
+                                key={name}
+                                label={name}
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: "0.7rem" }}
+                              />
+                            ))}
+                          </Box>
+                        )
+                      }
                     />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.ingredientName}
-                    secondary={
-                      [item.totalQuantity, item.unit]
-                        .filter(Boolean)
-                        .join(" ") || undefined
-                    }
-                  />
-                </ListItem>
-              </Box>
-            ))}
+                  </ListItem>
+                </Box>
+              );
+            })}
           </List>
         </Card>
       )}

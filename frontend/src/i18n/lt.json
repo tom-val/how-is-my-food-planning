@@ -106,6 +106,7 @@
     "delete": "Ištrinti",
     "edit": "Redaguoti",
     "loading": "Kraunama...",
-    "error": "Klaida"
+    "error": "Klaida",
+    "print": "Spausdinti"
   }
 }
