@@ -79,15 +79,6 @@ export default function RecipeDetailPage() {
         </Box>
       </Box>
 
-      {recipe.instructions && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            {t("recipes.instructions")}
-          </Typography>
-          <Typography whiteSpace="pre-wrap">{recipe.instructions}</Typography>
-        </Paper>
-      )}
-
       <Typography variant="h6" gutterBottom>
         {t("recipes.ingredients")} ({ingredients.length})
       </Typography>
@@ -110,6 +101,15 @@ export default function RecipeDetailPage() {
           ))}
         </List>
       </Paper>
+
+      {recipe.instructions && (
+        <Paper sx={{ p: 2, mt: 3 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            {t("recipes.instructions")}
+          </Typography>
+          <Typography whiteSpace="pre-wrap">{recipe.instructions}</Typography>
+        </Paper>
+      )}
 
       <Dialog
         open={isDeleteDialogOpen}

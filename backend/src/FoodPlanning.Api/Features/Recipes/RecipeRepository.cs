@@ -28,6 +28,7 @@ public interface IRecipeRepository
     Task<RecipeWithIngredients> CreateAsync(Guid familyId, string userId, string name, string? instructions, List<IngredientInput> ingredients);
     Task<RecipeWithIngredients?> UpdateAsync(Guid id, Guid familyId, string name, string? instructions, List<IngredientInput> ingredients);
     Task<bool> DeleteAsync(Guid id, Guid familyId);
+    Task<List<string>> GetDistinctIngredientNamesAsync(Guid familyId);
 }
 
 public record IngredientInput(string Name, decimal? Quantity, string? Unit);
@@ -238,6 +239,29 @@ public class RecipeRepository : IRecipeRepository
         }
 
         return result;
+    }
+
+    public async Task<List<string>> GetDistinctIngredientNamesAsync(Guid familyId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            SELECT DISTINCT ri.name
+            FROM recipe_ingredients ri
+            JOIN recipes r ON r.id = ri.recipe_id
+            WHERE r.family_id = @familyId
+            ORDER BY ri.name
+            """, conn);
+        cmd.Parameters.AddWithValue("familyId", familyId);
+
+        var names = new List<string>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            names.Add(reader.GetString(0));
+
+        return names;
     }
 
     private static async Task<List<RecipeIngredient>> GetIngredientsAsync(NpgsqlConnection conn, Guid recipeId)

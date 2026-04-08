@@ -29,6 +29,11 @@ export interface IngredientInput {
   unit: string | null;
 }
 
+export async function listIngredientNames(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>("/v1/recipes/ingredients");
+  return data;
+}
+
 export async function listRecipes(): Promise<RecipeWithIngredients[]> {
   const { data } = await apiClient.get<RecipeWithIngredients[]>("/v1/recipes");
   return data;

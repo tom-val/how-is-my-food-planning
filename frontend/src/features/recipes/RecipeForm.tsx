@@ -6,10 +6,13 @@ import {
   Typography,
   IconButton,
   Paper,
+  Autocomplete,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import type { IngredientInput } from "../../api/recipeApi";
+import { listIngredientNames } from "../../api/recipeApi";
 
 interface RecipeFormProps {
   initialName?: string;
@@ -44,6 +47,11 @@ export function RecipeForm({
   const [ingredients, setIngredients] = useState<IngredientInput[]>(
     initialIngredients?.length ? initialIngredients : [emptyIngredient()],
   );
+
+  const { data: knownIngredients = [] } = useQuery({
+    queryKey: ["ingredient-names"],
+    queryFn: listIngredientNames,
+  });
 
   const updateIngredient = (
     index: number,
@@ -98,12 +106,21 @@ export function RecipeForm({
           variant="outlined"
           sx={{ p: 1.5, mb: 1, display: "flex", gap: 1, alignItems: "center" }}
         >
-          <TextField
-            label={t("recipes.ingredientName")}
+          <Autocomplete
+            freeSolo
+            options={knownIngredients}
             value={ingredient.name}
-            onChange={(e) => updateIngredient(index, "name", e.target.value)}
-            size="small"
-            required
+            onInputChange={(_e, value) =>
+              updateIngredient(index, "name", value)
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={t("recipes.ingredientName")}
+                size="small"
+                required
+              />
+            )}
             sx={{ flex: 2 }}
           />
           <TextField

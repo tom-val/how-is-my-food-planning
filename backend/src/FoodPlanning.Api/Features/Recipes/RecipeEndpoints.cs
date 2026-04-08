@@ -11,6 +11,7 @@ public static class RecipeEndpoints
         var group = app.MapGroup("/v1/recipes");
 
         group.MapGet("/", ListRecipes);
+        group.MapGet("/ingredients", ListIngredientNames);
         group.MapPost("/", CreateRecipe);
         group.MapGet("/{id:guid}", GetRecipe);
         group.MapPut("/{id:guid}", UpdateRecipe);
@@ -27,6 +28,18 @@ public static class RecipeEndpoints
 
         var recipes = await repository.GetAllByFamilyAsync(member.FamilyId);
         return Results.Ok(recipes);
+    }
+
+    private static async Task<IResult> ListIngredientNames(
+        IRecipeRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        var names = await repository.GetDistinctIngredientNamesAsync(member.FamilyId);
+        return Results.Ok(names);
     }
 
     private static async Task<IResult> CreateRecipe(
