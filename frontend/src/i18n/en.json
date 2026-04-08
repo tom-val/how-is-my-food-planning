@@ -74,7 +74,8 @@
     "breakfast": "Breakfast",
     "lunch": "Lunch",
     "dinner": "Dinner",
-    "snack": "Snack"
+    "snack": "Snack",
+    "today": "Today"
   },
   "shopping": {
     "title": "Shopping List",

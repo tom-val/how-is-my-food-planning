@@ -1,6 +1,7 @@
 using Amazon.Lambda.AspNetCoreServer;
 using FluentValidation;
 using FoodPlanning.Api.Features.Families;
+using FoodPlanning.Api.Features.Planner;
 using FoodPlanning.Api.Features.Recipes;
 using FoodPlanning.Api.Shared;
 using FoodPlanning.Api.Shared.Database;
@@ -50,6 +51,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
 builder.Services.AddScoped<IFamilyMembershipService, FamilyMembershipService>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+builder.Services.AddScoped<IPlannerRepository, PlannerRepository>();
 
 var app = builder.Build();
 
@@ -68,5 +70,6 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapFamilyEndpoints();
 app.MapRecipeEndpoints();
+app.MapPlannerEndpoints();
 
 app.Run();

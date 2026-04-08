@@ -1,0 +1,61 @@
+import apiClient from "./client";
+
+export interface PlannedMeal {
+  id: string;
+  weeklyPlanId: string;
+  dayOfWeek: number;
+  mealType: string;
+  recipeId: string;
+  recipeName: string;
+}
+
+export interface WeeklyPlan {
+  id: string;
+  familyId: string;
+  weekStartDate: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface WeeklyPlanWithMeals {
+  plan: WeeklyPlan;
+  meals: PlannedMeal[];
+}
+
+export async function getPlan(
+  weekStart: string,
+): Promise<WeeklyPlanWithMeals> {
+  const { data } = await apiClient.get<WeeklyPlanWithMeals>("/v1/plans", {
+    params: { weekStart },
+  });
+  return data;
+}
+
+export async function addMeal(
+  planId: string,
+  dayOfWeek: number,
+  mealType: string,
+  recipeId: string,
+): Promise<PlannedMeal> {
+  const { data } = await apiClient.post<PlannedMeal>(
+    `/v1/plans/${planId}/meals`,
+    { dayOfWeek, mealType, recipeId },
+  );
+  return data;
+}
+
+export async function removeMeal(
+  planId: string,
+  mealId: string,
+): Promise<void> {
+  await apiClient.delete(`/v1/plans/${planId}/meals/${mealId}`);
+}
+
+/** Get the Monday of the week containing the given date. */
+export function getMonday(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return d.toISOString().split("T")[0];
+}

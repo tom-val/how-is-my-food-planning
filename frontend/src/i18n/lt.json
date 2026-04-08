@@ -74,7 +74,8 @@
     "breakfast": "Pusryčiai",
     "lunch": "Pietūs",
     "dinner": "Vakarienė",
-    "snack": "Užkandis"
+    "snack": "Užkandis",
+    "today": "Šiandien"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",
