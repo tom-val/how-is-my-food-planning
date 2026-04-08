@@ -3,6 +3,7 @@ using FluentValidation;
 using FoodPlanning.Api.Features.Families;
 using FoodPlanning.Api.Features.Planner;
 using FoodPlanning.Api.Features.Recipes;
+using FoodPlanning.Api.Features.Shopping;
 using FoodPlanning.Api.Shared;
 using FoodPlanning.Api.Shared.Database;
 using FoodPlanning.Api.Shared.Middleware;
@@ -52,6 +53,7 @@ builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
 builder.Services.AddScoped<IFamilyMembershipService, FamilyMembershipService>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IPlannerRepository, PlannerRepository>();
+builder.Services.AddScoped<IShoppingRepository, ShoppingRepository>();
 
 var app = builder.Build();
 
@@ -71,5 +73,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapFamilyEndpoints();
 app.MapRecipeEndpoints();
 app.MapPlannerEndpoints();
+app.MapShoppingEndpoints();
 
 app.Run();
