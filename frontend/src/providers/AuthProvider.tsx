@@ -13,6 +13,7 @@ import {
   CognitoUserAttribute,
   CognitoUserSession,
 } from "amazon-cognito-identity-js";
+import { setTokenProvider } from "../api/client";
 
 const POOL_ID = import.meta.env.VITE_COGNITO_USER_POOL_ID ?? "";
 const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID ?? "";
@@ -23,6 +24,10 @@ const isCognitoConfigured = POOL_ID !== "" && CLIENT_ID !== "";
 const userPool = isCognitoConfigured
   ? new CognitoUserPool({ UserPoolId: POOL_ID, ClientId: CLIENT_ID })
   : null;
+
+export function getCognitoUserPool(): CognitoUserPool | null {
+  return userPool;
+}
 
 export interface AuthUser {
   sub: string;
@@ -166,6 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
     });
   }, []);
+
+  // Wire axios interceptor so all API calls include the access token.
+  useEffect(() => {
+    setTokenProvider(getAccessToken);
+  }, [getAccessToken]);
 
   const value = useMemo(
     () => ({

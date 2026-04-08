@@ -19,7 +19,13 @@
     "hasAccount": "Jau turite paskyrą?",
     "signOut": "Atsijungti",
     "confirmCode": "Patvirtinimo kodas",
-    "confirm": "Patvirtinti"
+    "confirm": "Patvirtinti",
+    "sendCode": "Siųsti kodą",
+    "newPassword": "Naujas slaptažodis",
+    "resetPassword": "Atstatyti slaptažodį",
+    "passwordReset": "Slaptažodis atstatytas",
+    "passwordResetSuccess": "Slaptažodis sėkmingai pakeistas. Galite prisijungti.",
+    "backToLogin": "Grįžti į prisijungimą"
   },
   "family": {
     "create": "Sukurti šeimą",

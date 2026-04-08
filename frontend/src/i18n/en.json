@@ -19,7 +19,13 @@
     "hasAccount": "Already have an account?",
     "signOut": "Sign Out",
     "confirmCode": "Confirmation Code",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "sendCode": "Send Code",
+    "newPassword": "New Password",
+    "resetPassword": "Reset Password",
+    "passwordReset": "Password Reset",
+    "passwordResetSuccess": "Your password has been reset successfully. You can now sign in.",
+    "backToLogin": "Back to sign in"
   },
   "family": {
     "create": "Create Family",

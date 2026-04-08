@@ -80,6 +80,11 @@ export default function Login() {
           </Button>
         </Box>
         <Typography align="center" sx={{ mt: 2 }}>
+          <Link component={RouterLink} to="/forgot-password">
+            {t("auth.forgotPassword")}
+          </Link>
+        </Typography>
+        <Typography align="center" sx={{ mt: 1 }}>
           {t("auth.noAccount")}{" "}
           <Link component={RouterLink} to="/register">
             {t("auth.register")}

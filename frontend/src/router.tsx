@@ -2,12 +2,16 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { CircularProgress, Box } from "@mui/material";
 import { AppLayout } from "./components/layout/AppLayout";
+import { RequireAuth } from "./components/shared/RequireAuth";
 
 const Login = lazy(() => import("./features/auth/Login"));
 const Register = lazy(() => import("./features/auth/Register"));
-const Home = lazy(() => import("./features/planner/PlannerPage"));
-const RecipeList = lazy(() => import("./features/recipes/RecipeListPage"));
-const ShoppingList = lazy(() => import("./features/shopping/ShoppingListPage"));
+const ForgotPassword = lazy(() => import("./features/auth/ForgotPassword"));
+const PlannerPage = lazy(() => import("./features/planner/PlannerPage"));
+const RecipeListPage = lazy(() => import("./features/recipes/RecipeListPage"));
+const ShoppingListPage = lazy(
+  () => import("./features/shopping/ShoppingListPage"),
+);
 const FamilyPage = lazy(() => import("./features/family/FamilyPage"));
 
 function PageSpinner() {
@@ -45,15 +49,27 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/forgot-password",
+    element: (
+      <SuspenseWrapper>
+        <ForgotPassword />
+      </SuspenseWrapper>
+    ),
+  },
+  {
     path: "/",
-    element: <AppLayout />,
+    element: (
+      <RequireAuth>
+        <AppLayout />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Navigate to="/planner" replace /> },
       {
         path: "planner",
         element: (
           <SuspenseWrapper>
-            <Home />
+            <PlannerPage />
           </SuspenseWrapper>
         ),
       },
@@ -61,7 +77,7 @@ export const router = createBrowserRouter([
         path: "recipes",
         element: (
           <SuspenseWrapper>
-            <RecipeList />
+            <RecipeListPage />
           </SuspenseWrapper>
         ),
       },
@@ -69,7 +85,7 @@ export const router = createBrowserRouter([
         path: "shopping",
         element: (
           <SuspenseWrapper>
-            <ShoppingList />
+            <ShoppingListPage />
           </SuspenseWrapper>
         ),
       },
