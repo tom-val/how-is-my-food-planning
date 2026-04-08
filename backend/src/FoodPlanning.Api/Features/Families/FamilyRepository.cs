@@ -30,6 +30,7 @@ public interface IFamilyRepository
     Task<List<FamilyMember>> GetMembersAsync(Guid familyId);
     Task<string> RegenerateInviteCodeAsync(Guid familyId);
     Task<bool> RemoveMemberAsync(Guid familyId, string userId);
+    Task LeaveAsync(Guid familyId, string userId);
 }
 
 public class FamilyRepository : IFamilyRepository
@@ -210,6 +211,39 @@ public class FamilyRepository : IFamilyRepository
         cmd.Parameters.AddWithValue("userId", userId);
 
         return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task LeaveAsync(Guid familyId, string userId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+        await using var tx = await conn.BeginTransactionAsync();
+
+        // Remove the member.
+        await using var deleteCmd = new NpgsqlCommand(
+            "DELETE FROM family_members WHERE family_id = @familyId AND user_id = @userId",
+            conn, tx);
+        deleteCmd.Parameters.AddWithValue("familyId", familyId);
+        deleteCmd.Parameters.AddWithValue("userId", userId);
+        await deleteCmd.ExecuteNonQueryAsync();
+
+        // If no members remain, delete the family.
+        await using var countCmd = new NpgsqlCommand(
+            "SELECT COUNT(*) FROM family_members WHERE family_id = @familyId",
+            conn, tx);
+        countCmd.Parameters.AddWithValue("familyId", familyId);
+        var remaining = (long)(await countCmd.ExecuteScalarAsync())!;
+
+        if (remaining == 0)
+        {
+            await using var deleteFamilyCmd = new NpgsqlCommand(
+                "DELETE FROM families WHERE id = @familyId",
+                conn, tx);
+            deleteFamilyCmd.Parameters.AddWithValue("familyId", familyId);
+            await deleteFamilyCmd.ExecuteNonQueryAsync();
+        }
+
+        await tx.CommitAsync();
     }
 
     private static async Task<List<FamilyMember>> GetMembersInternalAsync(NpgsqlConnection conn, Guid familyId)

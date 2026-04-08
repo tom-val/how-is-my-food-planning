@@ -13,6 +13,7 @@ const ShoppingListPage = lazy(
   () => import("./features/shopping/ShoppingListPage"),
 );
 const FamilyPage = lazy(() => import("./features/family/FamilyPage"));
+const JoinByLinkPage = lazy(() => import("./features/family/JoinByLinkPage"));
 
 function PageSpinner() {
   return (
@@ -94,6 +95,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <FamilyPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: "join",
+        element: (
+          <SuspenseWrapper>
+            <JoinByLinkPage />
           </SuspenseWrapper>
         ),
       },

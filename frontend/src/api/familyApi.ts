@@ -63,6 +63,10 @@ export async function regenerateInviteCode(
   return data.inviteCode;
 }
 
+export async function leaveFamily(): Promise<void> {
+  await apiClient.post("/v1/families/leave");
+}
+
 export async function removeMember(
   familyId: string,
   userId: string,

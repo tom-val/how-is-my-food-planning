@@ -15,8 +15,13 @@ import {
   Tooltip,
   Divider,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
-import { ContentCopy, PersonRemove, Refresh } from "@mui/icons-material";
+import { ContentCopy, PersonRemove, Refresh, ExitToApp } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
@@ -26,6 +31,7 @@ import {
   joinFamily,
   regenerateInviteCode,
   removeMember,
+  leaveFamily,
 } from "../../api/familyApi";
 
 type View = "loading" | "noFamily" | "create" | "join" | "members";
@@ -39,6 +45,7 @@ export default function FamilyPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
 
   const { data: familyData, isLoading } = useQuery({
     queryKey: ["family", "my"],
@@ -86,8 +93,19 @@ export default function FamilyPage() {
     },
   });
 
-  const handleCopyCode = async (code: string) => {
-    await navigator.clipboard.writeText(code);
+  const leaveMutation = useMutation({
+    mutationFn: leaveFamily,
+    onSuccess: () => {
+      setIsLeaveDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["family"] });
+    },
+  });
+
+  const buildInviteLink = (code: string) =>
+    `${window.location.origin}/join?code=${code}`;
+
+  const handleCopyLink = async (code: string) => {
+    await navigator.clipboard.writeText(buildInviteLink(code));
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
   };
@@ -233,15 +251,15 @@ export default function FamilyPage() {
       </Typography>
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
           <Typography variant="body2" color="text.secondary">
             {t("family.inviteCode")}:
           </Typography>
           <Chip label={family.inviteCode} variant="outlined" />
-          <Tooltip title={codeCopied ? t("family.codeCopied") : t("family.copyCode")}>
+          <Tooltip title={codeCopied ? t("family.codeCopied") : t("family.copyLink")}>
             <IconButton
               size="small"
-              onClick={() => handleCopyCode(family.inviteCode)}
+              onClick={() => handleCopyLink(family.inviteCode)}
             >
               <ContentCopy fontSize="small" />
             </IconButton>
@@ -291,6 +309,40 @@ export default function FamilyPage() {
           ))}
         </List>
       </Paper>
+
+      <Button
+        variant="outlined"
+        color="error"
+        startIcon={<ExitToApp />}
+        onClick={() => setIsLeaveDialogOpen(true)}
+        sx={{ mt: 3 }}
+      >
+        {t("family.leave")}
+      </Button>
+
+      <Dialog
+        open={isLeaveDialogOpen}
+        onClose={() => setIsLeaveDialogOpen(false)}
+      >
+        <DialogTitle>{t("family.leaveConfirmTitle")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t("family.leaveConfirmMessage")}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsLeaveDialogOpen(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            color="error"
+            onClick={() => leaveMutation.mutate()}
+            disabled={leaveMutation.isPending}
+          >
+            {t("family.leave")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -15,6 +15,7 @@ public static class FamilyEndpoints
         group.MapGet("/{id:guid}/members", GetMembers);
         group.MapPost("/{id:guid}/regenerate-code", RegenerateCode);
         group.MapDelete("/{id:guid}/members/{userId}", RemoveMember);
+        group.MapPost("/leave", LeaveFamily);
     }
 
     private static async Task<IResult> CreateFamily(
@@ -118,5 +119,19 @@ public static class FamilyEndpoints
         return removed
             ? Results.NoContent()
             : Results.NotFound(new { error = "Member not found or cannot remove owner." });
+    }
+
+    private static async Task<IResult> LeaveFamily(
+        IFamilyRepository repository,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var membership = await repository.GetMembershipAsync(userId);
+
+        if (membership is null)
+            return Results.NotFound(new { error = "User does not belong to a family." });
+
+        await repository.LeaveAsync(membership.FamilyId, userId);
+        return Results.NoContent();
     }
 }

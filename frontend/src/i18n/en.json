@@ -38,7 +38,14 @@
     "noFamily": "You don't belong to a family yet",
     "owner": "Owner",
     "member": "Member",
-    "regenerateCode": "Regenerate Code"
+    "regenerateCode": "Regenerate Code",
+    "copyLink": "Copy invite link",
+    "invalidLink": "Invalid invite link",
+    "goToFamily": "Go to Family",
+    "joining": "Joining family...",
+    "leave": "Leave Family",
+    "leaveConfirmTitle": "Leave family?",
+    "leaveConfirmMessage": "Are you sure you want to leave this family? You will lose access to family recipes and plans."
   },
   "recipes": {
     "title": "Recipes",

@@ -38,7 +38,14 @@
     "noFamily": "Jūs dar nepriklausote šeimai",
     "owner": "Savininkas",
     "member": "Narys",
-    "regenerateCode": "Sugeneruoti naują kodą"
+    "regenerateCode": "Sugeneruoti naują kodą",
+    "copyLink": "Kopijuoti kvietimo nuorodą",
+    "invalidLink": "Netinkama kvietimo nuoroda",
+    "goToFamily": "Eiti į šeimą",
+    "joining": "Jungiamasi prie šeimos...",
+    "leave": "Išeiti iš šeimos",
+    "leaveConfirmTitle": "Išeiti iš šeimos?",
+    "leaveConfirmMessage": "Ar tikrai norite išeiti iš šeimos? Nebematysite šeimos receptų ir planų."
   },
   "recipes": {
     "title": "Receptai",
