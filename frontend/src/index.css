@@ -102,13 +102,9 @@ body {
     display: none !important;
   }
 
-  /* Comma-separate chips in a row */
-  .MuiChip-root::after {
+  /* Comma-separate chips in a row (skip if only one) */
+  .MuiChip-root + .MuiChip-root::before {
     content: ",\00a0";
-  }
-
-  .MuiChip-root:last-child::after {
-    content: "";
   }
 
   /* Compact list items */
