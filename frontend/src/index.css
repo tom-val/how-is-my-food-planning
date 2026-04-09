@@ -83,18 +83,32 @@ body {
     font-size: 11px !important;
   }
 
-  /* Compact chips — recipe names should be readable */
+  /* Chips become plain text in print */
   .MuiChip-root {
-    height: 22px !important;
-    font-size: 11px !important;
+    height: auto !important;
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    font-size: 15px !important;
+    border-radius: 0 !important;
   }
 
   .MuiChip-label {
-    padding: 0 8px !important;
+    padding: 0 !important;
   }
 
-  .MuiChip-deleteIcon {
+  .MuiChip-deleteIcon,
+  .MuiChip-icon {
     display: none !important;
+  }
+
+  /* Comma-separate chips in a row */
+  .MuiChip-root::after {
+    content: ",\00a0";
+  }
+
+  .MuiChip-root:last-child::after {
+    content: "";
   }
 
   /* Compact list items */
