@@ -40,7 +40,7 @@ resource "aws_lambda_function" "api" {
   handler          = "FoodPlanning.Api"
   architectures    = ["arm64"]
   memory_size      = 512
-  timeout          = 30
+  timeout          = 60
   filename         = data.archive_file.dummy.output_path
   source_code_hash = data.archive_file.dummy.output_base64sha256
 

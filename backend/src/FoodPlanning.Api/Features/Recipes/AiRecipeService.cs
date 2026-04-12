@@ -91,17 +91,34 @@ public class AiRecipeService : IAiRecipeService
             input.Add(new { role = msg.Role, content = msg.Content });
         }
 
-        var requestBody = new
+        // Only enable web search when a URL is detected in the conversation.
+        var hasUrl = messages.Any(m =>
+            m.Content.Contains("http://", StringComparison.OrdinalIgnoreCase) ||
+            m.Content.Contains("https://", StringComparison.OrdinalIgnoreCase));
+
+        object requestBody;
+        if (hasUrl)
         {
-            model = "gpt-5.4",
-            instructions = SystemPrompt,
-            input,
-            tools = new object[]
+            requestBody = new
             {
-                new { type = "web_search" }
-            },
-            max_output_tokens = 50000,
-        };
+                model = "gpt-5.4",
+                instructions = SystemPrompt,
+                input,
+                tools = new object[] { new { type = "web_search" } },
+                max_output_tokens = 50000,
+            };
+        }
+        else
+        {
+            requestBody = new
+            {
+                model = "gpt-5.4",
+                instructions = SystemPrompt,
+                input,
+                text = new { format = new { type = "json_object" } },
+                max_output_tokens = 50000,
+            };
+        }
 
         var json = JsonSerializer.Serialize(requestBody, JsonOptions);
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses")

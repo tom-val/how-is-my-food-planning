@@ -50,7 +50,10 @@ builder.Services
     .AddOptions<OpenAiSettings>()
     .Bind(builder.Configuration.GetSection(OpenAiSettings.SectionName));
 
-builder.Services.AddHttpClient<IAiRecipeService, AiRecipeService>();
+builder.Services.AddHttpClient<IAiRecipeService, AiRecipeService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(25);
+});
 
 // FluentValidation.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();

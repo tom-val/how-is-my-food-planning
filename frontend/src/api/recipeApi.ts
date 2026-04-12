@@ -59,6 +59,7 @@ export async function aiSuggestRecipes(
   const { data } = await apiClient.post<AiSuggestResponse>(
     "/v1/recipes/ai/suggest",
     { messages },
+    { timeout: 60000 },
   );
   return data;
 }
