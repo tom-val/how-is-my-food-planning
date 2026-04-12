@@ -85,7 +85,10 @@ public class AiRecipeService : IAiRecipeService
             throw new InvalidOperationException("OpenAI API key is not configured.");
 
         // Build input as conversation messages for the Responses API.
-        var input = new List<object>();
+        var input = new List<object>
+        {
+            new { role = "user", content = "Respond in JSON format." }
+        };
         foreach (var msg in messages)
         {
             input.Add(new { role = msg.Role, content = msg.Content });
