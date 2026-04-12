@@ -15,7 +15,8 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, AutoAwesome } from "@mui/icons-material";
+import { AiRecipeDialog } from "./AiRecipeDialog";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listRecipes, deleteRecipe } from "../../api/recipeApi";
@@ -26,6 +27,7 @@ export default function RecipeListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ["recipes"],
@@ -52,13 +54,22 @@ export default function RecipeListPage() {
     <Box maxWidth={600} mx="auto">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{t("recipes.title")}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => navigate("/recipes/new")}
-        >
-          {t("recipes.create")}
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<AutoAwesome />}
+            onClick={() => setIsAiDialogOpen(true)}
+          >
+            {t("recipes.aiCreate")}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate("/recipes/new")}
+          >
+            {t("recipes.create")}
+          </Button>
+        </Box>
       </Box>
 
       {!recipes?.length ? (
@@ -126,6 +137,8 @@ export default function RecipeListPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <AiRecipeDialog open={isAiDialogOpen} onClose={() => setIsAiDialogOpen(false)} />
     </Box>
   );
 }

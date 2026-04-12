@@ -35,6 +35,34 @@ export async function listIngredientNames(): Promise<string[]> {
   return data;
 }
 
+export interface AiMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface AiSuggestedRecipe {
+  name: string;
+  instructions: string | null;
+  categories: string[];
+  ingredients: IngredientInput[];
+}
+
+export interface AiSuggestResponse {
+  recipes: AiSuggestedRecipe[];
+  message: string;
+  assistantMessage: string;
+}
+
+export async function aiSuggestRecipes(
+  messages: AiMessage[],
+): Promise<AiSuggestResponse> {
+  const { data } = await apiClient.post<AiSuggestResponse>(
+    "/v1/recipes/ai/suggest",
+    { messages },
+  );
+  return data;
+}
+
 export async function listRecipes(): Promise<RecipeWithIngredients[]> {
   const { data } = await apiClient.get<RecipeWithIngredients[]>("/v1/recipes");
   return data;

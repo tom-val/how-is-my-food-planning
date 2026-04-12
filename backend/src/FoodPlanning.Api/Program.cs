@@ -45,6 +45,13 @@ builder.Services.AddCors(options =>
     });
 });
 
+// OpenAI.
+builder.Services
+    .AddOptions<OpenAiSettings>()
+    .Bind(builder.Configuration.GetSection(OpenAiSettings.SectionName));
+
+builder.Services.AddHttpClient<IAiRecipeService, AiRecipeService>();
+
 // FluentValidation.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 

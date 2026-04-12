@@ -12,6 +12,7 @@ public static class RecipeEndpoints
 
         group.MapGet("/", ListRecipes);
         group.MapGet("/ingredients", ListIngredientNames);
+        group.MapPost("/ai/suggest", AiSuggest);
         group.MapPost("/", CreateRecipe);
         group.MapGet("/{id:guid}", GetRecipe);
         group.MapPut("/{id:guid}", UpdateRecipe);
@@ -113,5 +114,21 @@ public static class RecipeEndpoints
         return deleted
             ? Results.NoContent()
             : Results.NotFound(new { error = "Recipe not found." });
+    }
+
+    private static async Task<IResult> AiSuggest(
+        AiSuggestRequest request,
+        IAiRecipeService aiService,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        await membership.RequireMembershipAsync(userId);
+
+        if (request.Messages.Count == 0)
+            return Results.BadRequest(new { error = "At least one message is required." });
+
+        var result = await aiService.SuggestAsync(request.Messages);
+        return Results.Ok(result);
     }
 }

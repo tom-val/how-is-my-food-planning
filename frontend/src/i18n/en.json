@@ -70,7 +70,11 @@
     "saved": "Recipe saved",
     "deleted": "Recipe deleted",
     "categories": "Categories",
-    "categoriesHint": "Leave empty if the recipe suits any meal"
+    "categoriesHint": "Leave empty if the recipe suits any meal",
+    "aiCreate": "Create with AI",
+    "aiHint": "Describe a dish you want, e.g. \"Cepelinai\" or \"light breakfast\"",
+    "aiPlaceholder": "Describe a dish...",
+    "aiUseRecipe": "Use this"
   },
   "planner": {
     "title": "Weekly Plan",

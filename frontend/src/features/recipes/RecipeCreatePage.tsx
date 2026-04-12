@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Typography, Box, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -6,13 +6,16 @@ import { useSnackbar } from "notistack";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createRecipe } from "../../api/recipeApi";
 import { RecipeForm } from "./RecipeForm";
-import type { IngredientInput } from "../../api/recipeApi";
+import type { AiSuggestedRecipe, IngredientInput } from "../../api/recipeApi";
 
 export default function RecipeCreatePage() {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+
+  const aiRecipe = (location.state as { aiRecipe?: AiSuggestedRecipe } | null)?.aiRecipe;
 
   const mutation = useMutation({
     mutationFn: ({
@@ -46,6 +49,10 @@ export default function RecipeCreatePage() {
         </Button>
       </Box>
       <RecipeForm
+        initialName={aiRecipe?.name}
+        initialInstructions={aiRecipe?.instructions}
+        initialCategories={aiRecipe?.categories}
+        initialIngredients={aiRecipe?.ingredients}
         onSubmit={(name, instructions, categories, ingredients) =>
           mutation.mutate({ name, instructions, categories, ingredients })
         }

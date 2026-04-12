@@ -70,7 +70,11 @@
     "saved": "Receptas išsaugotas",
     "deleted": "Receptas ištrintas",
     "categories": "Kategorijos",
-    "categoriesHint": "Nepasirinkus jokios, receptas tiks visoms kategorijoms"
+    "categoriesHint": "Nepasirinkus jokios, receptas tiks visoms kategorijoms",
+    "aiCreate": "Kurti su AI",
+    "aiHint": "Aprašykite norima patiekala, pvz. Cepelinai arba lengvi pusryciai",
+    "aiPlaceholder": "Aprašykite patiekalą...",
+    "aiUseRecipe": "Naudoti"
   },
   "planner": {
     "title": "Savaitės planas",
