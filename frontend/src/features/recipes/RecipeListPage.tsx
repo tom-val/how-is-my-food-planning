@@ -15,6 +15,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Add, AutoAwesome } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -29,6 +31,8 @@ export default function RecipeListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
@@ -68,22 +72,43 @@ export default function RecipeListPage() {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{t("recipes.title")}</Typography>
         <Box display="flex" gap={1}>
-          <IconButton
-            color="primary"
-            onClick={() => navigate("/recipes/ai")}
-            title={t("recipes.aiCreate")}
-            sx={{ border: 1, borderColor: "primary.main" }}
-          >
-            <AutoAwesome />
-          </IconButton>
-          <IconButton
-            color="primary"
-            onClick={() => navigate("/recipes/new")}
-            title={t("recipes.create")}
-            sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" } }}
-          >
-            <Add />
-          </IconButton>
+          {isMobile ? (
+            <>
+              <IconButton
+                color="primary"
+                onClick={() => navigate("/recipes/ai")}
+                title={t("recipes.aiCreate")}
+                sx={{ border: 1, borderColor: "primary.main" }}
+              >
+                <AutoAwesome />
+              </IconButton>
+              <IconButton
+                color="primary"
+                onClick={() => navigate("/recipes/new")}
+                title={t("recipes.create")}
+                sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" } }}
+              >
+                <Add />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<AutoAwesome />}
+                onClick={() => navigate("/recipes/ai")}
+              >
+                {t("recipes.aiCreate")}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => navigate("/recipes/new")}
+              >
+                {t("recipes.create")}
+              </Button>
+            </>
+          )}
         </Box>
       </Box>
 
