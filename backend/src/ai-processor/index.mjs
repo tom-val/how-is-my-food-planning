@@ -46,7 +46,7 @@ ALWAYS respond with valid JSON matching this exact schema:
   "recipes": [
     {
       "name": "Recipe name",
-      "instructions": "Step by step instructions...",
+      "instructions": "1. First step\\n2. Second step\\n3. Third step",
       "categories": ["breakfast", "lunch", "dinner", "snack"],
       "ingredients": [
         { "name": "Ingredient", "quantity": 1.0, "unit": "kg" }
@@ -61,6 +61,7 @@ Rules:
 - Leave categories empty [] if the dish suits any meal
 - quantity can be null if not applicable
 - unit can be null if not applicable
+- Instructions MUST be formatted with numbered steps, each step separated by TWO newlines (\\n). Example: "1. Do this\\n2. Do that\\n3. Then this"
 - Instructions should be detailed and in the same language as the user's request
 - Recipe names should be in the same language as the user's request
 - If the user asks to modify a recipe, return the modified version

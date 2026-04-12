@@ -20,12 +20,6 @@ variable "cors_allowed_origins" {
   default = []
 }
 
-variable "openai_api_key" {
-  type      = string
-  sensitive = true
-  default   = ""
-}
-
 variable "sqs_ai_recipe_queue_url" {
   type    = string
   default = ""

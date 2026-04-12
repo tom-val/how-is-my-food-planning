@@ -67,7 +67,6 @@ module "lambda" {
   db_connection_string      = var.db_connection_string
   api_gateway_execution_arn = module.api_gateway.execution_arn
   cors_allowed_origins      = local.cors_allowed_origins
-  openai_api_key            = var.openai_api_key
   sqs_ai_recipe_queue_url   = module.ai_processor.queue_url
 }
 

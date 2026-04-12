@@ -36,7 +36,10 @@ export default function ShoppingListPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(0);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
+  const [customItemQuantity, setCustomItemQuantity] = useState("");
+  const [customItemUnit, setCustomItemUnit] = useState("");
   const [isRefreshDialogOpen, setIsRefreshDialogOpen] = useState(false);
 
   const weekStart = useMemo(() => {
@@ -116,10 +119,19 @@ export default function ShoppingListPage() {
   });
 
   const addItemMutation = useMutation({
-    mutationFn: () => addCustomItem(planId!, customItemName.trim(), null, null),
+    mutationFn: () =>
+      addCustomItem(
+        planId!,
+        customItemName.trim(),
+        customItemQuantity ? Number(customItemQuantity) : null,
+        customItemUnit.trim() || null,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] });
       setCustomItemName("");
+      setCustomItemQuantity("");
+      setCustomItemUnit("");
+      setIsAddDialogOpen(false);
     },
   });
 
@@ -193,29 +205,16 @@ export default function ShoppingListPage() {
         </Box>
       </Box>
 
-      {/* Add custom item */}
-      <Box display="flex" gap={1} mb={2} className="no-print">
-        <TextField
+      {/* Add custom item button */}
+      <Box mb={2} className="no-print">
+        <Button
           size="small"
-          fullWidth
-          placeholder={t("shopping.addItemPlaceholder")}
-          value={customItemName}
-          onChange={(e) => setCustomItemName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && customItemName.trim()) {
-              e.preventDefault();
-              addItemMutation.mutate();
-            }
-          }}
-          disabled={!planId || addItemMutation.isPending}
-        />
-        <IconButton
-          color="primary"
-          onClick={() => addItemMutation.mutate()}
-          disabled={!customItemName.trim() || !planId || addItemMutation.isPending}
+          startIcon={<Add />}
+          onClick={() => setIsAddDialogOpen(true)}
+          disabled={!planId}
         >
-          <Add />
-        </IconButton>
+          {t("shopping.addItem")}
+        </Button>
       </Box>
 
       {/* List */}
@@ -326,6 +325,57 @@ export default function ShoppingListPage() {
             disabled={regenerateMutation.isPending}
           >
             {t("shopping.refresh")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add custom item dialog */}
+      <Dialog
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>{t("shopping.addItem")}</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label={t("shopping.itemName")}
+            value={customItemName}
+            onChange={(e) => setCustomItemName(e.target.value)}
+            margin="normal"
+            required
+            autoFocus
+          />
+          <Box display="flex" gap={1.5}>
+            <TextField
+              label={t("recipes.quantity")}
+              value={customItemQuantity}
+              onChange={(e) => setCustomItemQuantity(e.target.value)}
+              type="number"
+              inputProps={{ step: "any", min: 0 }}
+              sx={{ flex: 1 }}
+              margin="normal"
+            />
+            <TextField
+              label={t("recipes.unit")}
+              value={customItemUnit}
+              onChange={(e) => setCustomItemUnit(e.target.value)}
+              sx={{ flex: 1 }}
+              margin="normal"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsAddDialogOpen(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => addItemMutation.mutate()}
+            disabled={!customItemName.trim() || addItemMutation.isPending}
+          >
+            {t("common.save")}
           </Button>
         </DialogActions>
       </Dialog>

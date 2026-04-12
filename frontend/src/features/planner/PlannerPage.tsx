@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Box,
@@ -67,6 +68,7 @@ function sameDayNextWeek(weekStart: string, dayOfWeek: number): string {
 
 export default function PlannerPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -195,10 +197,14 @@ export default function PlannerPage() {
     return `${fmt(start)} – ${fmt(end)}`;
   }, [weekStart]);
 
+  const longPressTriggered = useRef(false);
+
   const handleLongPressStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent, meal: PlannedMeal, dayOfWeek: number) => {
+      longPressTriggered.current = false;
       const target = e.currentTarget as HTMLElement;
       longPressTimer.current = setTimeout(() => {
+        longPressTriggered.current = true;
         setScheduleMenu({ anchorEl: target, meal, dayOfWeek });
       }, 1500);
     },
@@ -211,6 +217,15 @@ export default function PlannerPage() {
       longPressTimer.current = null;
     }
   }, []);
+
+  const handleChipClick = useCallback(
+    (meal: PlannedMeal) => {
+      if (!longPressTriggered.current) {
+        navigate(`/recipes/${meal.recipeId}`);
+      }
+    },
+    [navigate],
+  );
 
   const handleSchedule = (date: string) => {
     if (!scheduleMenu) return;
@@ -345,6 +360,7 @@ export default function PlannerPage() {
                         <Chip
                           key={meal.id}
                           label={meal.recipeName}
+                          onClick={() => handleChipClick(meal)}
                           onDelete={() => removeMutation.mutate(meal.id)}
                           size={isMobile ? "small" : "medium"}
                           color="primary"

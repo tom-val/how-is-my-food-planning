@@ -101,7 +101,9 @@
     "refresh": "Atnaujinti",
     "refreshConfirmTitle": "Atnaujinti pirkinių sąrašą?",
     "refreshConfirmMessage": "Sąrašas bus sugeneruotas iš naujo pagal savaitės planą. Jau pažymėti ingredientai išliks pažymėti.",
-    "addItemPlaceholder": "Prideti produkta..."
+    "addItemPlaceholder": "Prideti produkta...",
+    "addItem": "Prideti produkta",
+    "itemName": "Produkto pavadinimas"
   },
   "days": {
     "mon": "Pirmadienis",

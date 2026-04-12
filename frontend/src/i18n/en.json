@@ -101,7 +101,9 @@
     "refresh": "Refresh",
     "refreshConfirmTitle": "Refresh shopping list?",
     "refreshConfirmMessage": "The list will be regenerated from this week's meal plan. Already checked items will stay checked.",
-    "addItemPlaceholder": "Add custom item..."
+    "addItemPlaceholder": "Add custom item...",
+    "addItem": "Add item",
+    "itemName": "Item name"
   },
   "days": {
     "mon": "Monday",

@@ -49,7 +49,6 @@ resource "aws_lambda_function" "api" {
       {
         ASPNETCORE_ENVIRONMENT     = "Production"
         Database__ConnectionString = var.db_connection_string
-        OpenAi__ApiKey             = var.openai_api_key
         Sqs__AiRecipeQueueUrl      = var.sqs_ai_recipe_queue_url
       },
       { for i, origin in var.cors_allowed_origins : "Cors__AllowedOrigins__${i}" => origin }
