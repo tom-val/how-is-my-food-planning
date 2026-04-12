@@ -100,10 +100,6 @@ public class AiRecipeService : IAiRecipeService
             {
                 new { type = "web_search" }
             },
-            text = new
-            {
-                format = new { type = "json_object" }
-            },
             max_output_tokens = 50000,
         };
 
@@ -125,15 +121,17 @@ public class AiRecipeService : IAiRecipeService
         }
 
         // Parse the Responses API response.
-        // The output_text field contains the text output directly.
         using var doc = JsonDocument.Parse(responseBody);
         var content = doc.RootElement.GetProperty("output_text").GetString();
 
         if (string.IsNullOrEmpty(content))
             throw new InvalidOperationException("Empty response from OpenAI.");
 
+        // Extract JSON from the response — it may be wrapped in markdown code fences.
+        var jsonContent = ExtractJson(content);
+
         // Parse the JSON content from the assistant.
-        var parsed = JsonSerializer.Deserialize<AiParsedResponse>(content, JsonOptions);
+        var parsed = JsonSerializer.Deserialize<AiParsedResponse>(jsonContent, JsonOptions);
         if (parsed is null)
             throw new InvalidOperationException("Failed to parse AI response.");
 
@@ -141,6 +139,38 @@ public class AiRecipeService : IAiRecipeService
             parsed.Recipes ?? [],
             parsed.Message ?? "",
             content);
+    }
+
+    private static string ExtractJson(string text)
+    {
+        // Try to extract JSON from markdown code fences like ```json ... ```
+        var trimmed = text.Trim();
+
+        var jsonStart = trimmed.IndexOf("```json", StringComparison.OrdinalIgnoreCase);
+        if (jsonStart >= 0)
+        {
+            var contentStart = trimmed.IndexOf('\n', jsonStart) + 1;
+            var contentEnd = trimmed.IndexOf("```", contentStart, StringComparison.Ordinal);
+            if (contentEnd > contentStart)
+                return trimmed[contentStart..contentEnd].Trim();
+        }
+
+        var fenceStart = trimmed.IndexOf("```", StringComparison.Ordinal);
+        if (fenceStart >= 0)
+        {
+            var contentStart = trimmed.IndexOf('\n', fenceStart) + 1;
+            var contentEnd = trimmed.IndexOf("```", contentStart, StringComparison.Ordinal);
+            if (contentEnd > contentStart)
+                return trimmed[contentStart..contentEnd].Trim();
+        }
+
+        // Try to find raw JSON object.
+        var braceStart = trimmed.IndexOf('{');
+        var braceEnd = trimmed.LastIndexOf('}');
+        if (braceStart >= 0 && braceEnd > braceStart)
+            return trimmed[braceStart..(braceEnd + 1)];
+
+        return trimmed;
     }
 
     private record AiParsedResponse(
