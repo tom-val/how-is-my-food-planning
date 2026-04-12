@@ -45,3 +45,20 @@ export async function toggleItem(
 ): Promise<void> {
   await apiClient.patch(`/v1/shopping-list-items/${itemId}`, { isChecked });
 }
+
+export async function addCustomItem(
+  planId: string,
+  ingredientName: string,
+  quantity: number | null,
+  unit: string | null,
+): Promise<ShoppingListItem> {
+  const { data } = await apiClient.post<ShoppingListItem>(
+    `/v1/plans/${planId}/shopping-list/items`,
+    { ingredientName, quantity, unit },
+  );
+  return data;
+}
+
+export async function deleteItem(itemId: string): Promise<void> {
+  await apiClient.delete(`/v1/shopping-list-items/${itemId}`);
+}

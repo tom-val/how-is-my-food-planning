@@ -100,7 +100,8 @@
     "empty": "Shopping list is empty. Plan some meals for the week first.",
     "refresh": "Refresh",
     "refreshConfirmTitle": "Refresh shopping list?",
-    "refreshConfirmMessage": "The list will be regenerated from this week's meal plan. Already checked items will stay checked."
+    "refreshConfirmMessage": "The list will be regenerated from this week's meal plan. Already checked items will stay checked.",
+    "addItemPlaceholder": "Add custom item..."
   },
   "days": {
     "mon": "Monday",

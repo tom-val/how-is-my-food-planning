@@ -18,14 +18,16 @@ import {
   DialogActions,
   Chip,
   IconButton,
+  TextField,
 } from "@mui/material";
-import { Refresh, ChevronLeft, ChevronRight, Print } from "@mui/icons-material";
+import { Refresh, ChevronLeft, ChevronRight, Print, Add } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getShoppingList,
   generateShoppingList,
   toggleItem,
+  addCustomItem,
 } from "../../api/shoppingApi";
 import type { ShoppingListResponse } from "../../api/shoppingApi";
 import { getPlan, getMonday } from "../../api/plannerApi";
@@ -34,6 +36,7 @@ export default function ShoppingListPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(0);
+  const [customItemName, setCustomItemName] = useState("");
   const [isRefreshDialogOpen, setIsRefreshDialogOpen] = useState(false);
 
   const weekStart = useMemo(() => {
@@ -112,6 +115,15 @@ export default function ShoppingListPage() {
     },
   });
 
+  const addItemMutation = useMutation({
+    mutationFn: () => addCustomItem(planId!, customItemName.trim(), null, null),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] });
+      setCustomItemName("");
+    },
+  });
+
+
   const isLoading = isPlanLoading || isItemsLoading;
   const checkedCount = items?.filter((i) => i.isChecked).length ?? 0;
   const totalCount = items?.length ?? 0;
@@ -181,6 +193,31 @@ export default function ShoppingListPage() {
         </Box>
       </Box>
 
+      {/* Add custom item */}
+      <Box display="flex" gap={1} mb={2} className="no-print">
+        <TextField
+          size="small"
+          fullWidth
+          placeholder={t("shopping.addItemPlaceholder")}
+          value={customItemName}
+          onChange={(e) => setCustomItemName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && customItemName.trim()) {
+              e.preventDefault();
+              addItemMutation.mutate();
+            }
+          }}
+          disabled={!planId || addItemMutation.isPending}
+        />
+        <IconButton
+          color="primary"
+          onClick={() => addItemMutation.mutate()}
+          disabled={!customItemName.trim() || !planId || addItemMutation.isPending}
+        >
+          <Add />
+        </IconButton>
+      </Box>
+
       {/* List */}
       {!items?.length ? (
         <Box textAlign="center" py={6}>
@@ -246,7 +283,7 @@ export default function ShoppingListPage() {
                       }
                       secondary={
                         recipes.length > 0 && (
-                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
+                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5} className="no-print">
                             {recipes.map((name) => (
                               <Chip
                                 key={name}

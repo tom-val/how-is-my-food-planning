@@ -100,7 +100,8 @@
     "empty": "Pirkinių sąrašas tuščias. Suplanuokite patiekalus savaitei.",
     "refresh": "Atnaujinti",
     "refreshConfirmTitle": "Atnaujinti pirkinių sąrašą?",
-    "refreshConfirmMessage": "Sąrašas bus sugeneruotas iš naujo pagal savaitės planą. Jau pažymėti ingredientai išliks pažymėti."
+    "refreshConfirmMessage": "Sąrašas bus sugeneruotas iš naujo pagal savaitės planą. Jau pažymėti ingredientai išliks pažymėti.",
+    "addItemPlaceholder": "Prideti produkta..."
   },
   "days": {
     "mon": "Pirmadienis",

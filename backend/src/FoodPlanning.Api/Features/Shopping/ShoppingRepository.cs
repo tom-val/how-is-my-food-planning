@@ -22,6 +22,8 @@ public interface IShoppingRepository
 {
     Task<List<ShoppingListItem>> GetByPlanIdAsync(Guid planId);
     Task<List<ShoppingListItem>> GenerateAsync(Guid planId);
+    Task<ShoppingListItem> AddCustomItemAsync(Guid planId, string ingredientName, decimal? quantity, string? unit);
+    Task<bool> DeleteItemAsync(Guid itemId);
     Task<bool> ToggleItemAsync(Guid itemId, bool isChecked, string userId);
     Task<List<IngredientRecipeMapping>> GetRecipeMappingsAsync(Guid planId);
 }
@@ -122,6 +124,41 @@ public class ShoppingRepository : IShoppingRepository
 
         // Return sorted: unchecked first.
         return result.OrderBy(i => i.IsChecked).ThenBy(i => i.IngredientName).ToList();
+    }
+
+    public async Task<ShoppingListItem> AddCustomItemAsync(Guid planId, string ingredientName, decimal? quantity, string? unit)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO shopping_list_items (weekly_plan_id, ingredient_name, total_quantity, unit)
+            VALUES (@planId, @name, @quantity, @unit)
+            RETURNING id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
+            """, conn);
+        cmd.Parameters.AddWithValue("planId", planId);
+        cmd.Parameters.AddWithValue("name", ingredientName);
+        cmd.Parameters.AddWithValue("quantity", (object?)quantity ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("unit", (object?)unit ?? DBNull.Value);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+            throw new InvalidOperationException("Failed to add custom item.");
+
+        return ReadItem(reader);
+    }
+
+    public async Task<bool> DeleteItemAsync(Guid itemId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            "DELETE FROM shopping_list_items WHERE id = @itemId", conn);
+        cmd.Parameters.AddWithValue("itemId", itemId);
+
+        return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
     public async Task<bool> ToggleItemAsync(Guid itemId, bool isChecked, string userId)
