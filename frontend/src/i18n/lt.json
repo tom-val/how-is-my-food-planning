@@ -72,8 +72,8 @@
     "categories": "Kategorijos",
     "categoriesHint": "Nepasirinkus jokios, receptas tiks visoms kategorijoms",
     "aiCreate": "Kurti su AI",
-    "aiHint": "Aprašykite norima patiekala, pvz. Cepelinai arba lengvi pusryciai",
-    "aiPlaceholder": "Aprašykite patiekalą...",
+    "aiHint": "Aprašykite norima patiekala arba iklijuokite recepto nuoroda",
+    "aiPlaceholder": "Patiekalas arba nuoroda...",
     "aiUseRecipe": "Naudoti",
     "allCategories": "Visi"
   },

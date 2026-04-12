@@ -14,7 +14,8 @@
       "WebFetch(domain:mui.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__chrome-devtools__take_snapshot",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebFetch(domain:developers.openai.com)"
     ]
   }
 }

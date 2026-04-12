@@ -72,8 +72,8 @@
     "categories": "Categories",
     "categoriesHint": "Leave empty if the recipe suits any meal",
     "aiCreate": "Create with AI",
-    "aiHint": "Describe a dish you want, e.g. \"Cepelinai\" or \"light breakfast\"",
-    "aiPlaceholder": "Describe a dish...",
+    "aiHint": "Describe a dish or paste a recipe URL",
+    "aiPlaceholder": "Dish name or recipe URL...",
     "aiUseRecipe": "Use this",
     "allCategories": "All"
   },

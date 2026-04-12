@@ -33,7 +33,10 @@ public class AiRecipeService : IAiRecipeService
     private readonly ILogger<AiRecipeService> _logger;
 
     private const string SystemPrompt = """
-        You are a cooking assistant. The user will describe a dish or type of food they want.
+        You are a cooking assistant. The user will describe a dish or type of food they want,
+        or provide a URL to a recipe page. If a URL is provided, use web search to fetch the
+        recipe from that page.
+
         Respond with 1-3 recipe suggestions in JSON format.
 
         IMPORTANT: Always respond with valid JSON matching this exact schema:
@@ -59,6 +62,7 @@ public class AiRecipeService : IAiRecipeService
         - Instructions should be detailed and in the same language as the user's request
         - Recipe names should be in the same language as the user's request
         - If the user asks to modify a recipe, return the modified version
+        - If the user provides a URL, fetch the recipe from it and convert to the JSON format
         - Always return valid JSON, nothing else
         """;
 
@@ -80,27 +84,31 @@ public class AiRecipeService : IAiRecipeService
         if (string.IsNullOrEmpty(_apiKey))
             throw new InvalidOperationException("OpenAI API key is not configured.");
 
-        var chatMessages = new List<object>
-        {
-            new { role = "system", content = SystemPrompt }
-        };
-
+        // Build input as conversation messages for the Responses API.
+        var input = new List<object>();
         foreach (var msg in messages)
         {
-            chatMessages.Add(new { role = msg.Role, content = msg.Content });
+            input.Add(new { role = msg.Role, content = msg.Content });
         }
 
         var requestBody = new
         {
             model = "gpt-5.4",
-            messages = chatMessages,
-            temperature = 0.7,
-            max_completion_tokens = 50000,
-            response_format = new { type = "json_object" },
+            instructions = SystemPrompt,
+            input,
+            tools = new object[]
+            {
+                new { type = "web_search" }
+            },
+            text = new
+            {
+                format = new { type = "json_object" }
+            },
+            max_output_tokens = 50000,
         };
 
         var json = JsonSerializer.Serialize(requestBody, JsonOptions);
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses")
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json"),
         };
@@ -116,13 +124,10 @@ public class AiRecipeService : IAiRecipeService
             throw new InvalidOperationException($"OpenAI API returned {response.StatusCode}.");
         }
 
-        // Parse the chat completion response.
+        // Parse the Responses API response.
+        // The output_text field contains the text output directly.
         using var doc = JsonDocument.Parse(responseBody);
-        var content = doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString();
+        var content = doc.RootElement.GetProperty("output_text").GetString();
 
         if (string.IsNullOrEmpty(content))
             throw new InvalidOperationException("Empty response from OpenAI.");
