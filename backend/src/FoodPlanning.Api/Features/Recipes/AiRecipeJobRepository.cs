@@ -14,8 +14,10 @@ public record AiRecipeJob(
 public interface IAiRecipeJobRepository
 {
     Task<Guid> CreateJobAsync(Guid familyId, string userId, List<AiMessage> messages);
+    Task<Guid> CreateImageJobAsync(Guid familyId, string userId, string imageBase64);
     Task<AiRecipeJob?> GetJobAsync(Guid jobId);
     Task<(Guid Id, Guid FamilyId, string UserId, List<AiMessage> Messages)?> GetPendingJobAsync(Guid jobId);
+    Task<string?> GetJobImageAsync(Guid jobId);
     Task CompleteJobAsync(Guid jobId, AiSuggestResponse response);
     Task FailJobAsync(Guid jobId, string error);
 }
@@ -52,6 +54,37 @@ public class AiRecipeJobRepository : IAiRecipeJobRepository
         cmd.Parameters.AddWithValue("requestBody", requestJson);
 
         return (Guid)(await cmd.ExecuteScalarAsync())!;
+    }
+
+    public async Task<Guid> CreateImageJobAsync(Guid familyId, string userId, string imageBase64)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO ai_recipe_jobs (family_id, user_id, request_body, image_base64)
+            VALUES (@familyId, @userId, '[]'::jsonb, @image)
+            RETURNING id
+            """, conn);
+        cmd.Parameters.AddWithValue("familyId", familyId);
+        cmd.Parameters.AddWithValue("userId", userId);
+        cmd.Parameters.AddWithValue("image", imageBase64);
+
+        return (Guid)(await cmd.ExecuteScalarAsync())!;
+    }
+
+    public async Task<string?> GetJobImageAsync(Guid jobId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            "SELECT image_base64 FROM ai_recipe_jobs WHERE id = @id", conn);
+        cmd.Parameters.AddWithValue("id", jobId);
+
+        var result = await cmd.ExecuteScalarAsync();
+        return result as string;
     }
 
     public async Task<AiRecipeJob?> GetJobAsync(Guid jobId)

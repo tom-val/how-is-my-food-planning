@@ -75,7 +75,8 @@
     "aiHint": "Describe a dish or paste a recipe URL",
     "aiPlaceholder": "Dish name or recipe URL...",
     "aiUseRecipe": "Use this",
-    "allCategories": "All"
+    "allCategories": "All",
+    "fromImage": "From image"
   },
   "planner": {
     "title": "Weekly Plan",

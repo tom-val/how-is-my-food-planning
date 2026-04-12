@@ -14,3 +14,5 @@ public record AiSuggestResponse(
     List<AiSuggestedRecipe> Recipes,
     string Message,
     string AssistantMessage);
+
+public record AiImageRequest(string ImageBase64);

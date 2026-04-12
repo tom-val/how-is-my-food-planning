@@ -70,6 +70,16 @@ export async function aiStartJob(
   return data;
 }
 
+export async function aiStartImageJob(
+  imageBase64: string,
+): Promise<{ jobId: string }> {
+  const { data } = await apiClient.post<{ jobId: string }>(
+    "/v1/recipes/ai/image",
+    { imageBase64 },
+  );
+  return data;
+}
+
 export async function aiPollJob(jobId: string): Promise<AiRecipeJob> {
   const { data } = await apiClient.get<AiRecipeJob>(
     `/v1/recipes/ai/jobs/${jobId}`,

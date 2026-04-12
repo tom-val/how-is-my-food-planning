@@ -75,7 +75,8 @@
     "aiHint": "Aprašykite norima patiekala arba iklijuokite recepto nuoroda",
     "aiPlaceholder": "Patiekalas arba nuoroda...",
     "aiUseRecipe": "Naudoti",
-    "allCategories": "Visi"
+    "allCategories": "Visi",
+    "fromImage": "Is nuotraukos"
   },
   "planner": {
     "title": "Savaitės planas",

@@ -18,6 +18,7 @@ public static class RecipeEndpoints
         group.MapGet("/", ListRecipes);
         group.MapGet("/ingredients", ListIngredientNames);
         group.MapPost("/ai/start", AiStart);
+        group.MapPost("/ai/image", AiImageStart);
         group.MapGet("/ai/jobs/{jobId:guid}", AiPoll);
         group.MapPost("/", CreateRecipe);
         group.MapGet("/{id:guid}", GetRecipe);
@@ -146,6 +147,35 @@ public static class RecipeEndpoints
             {
                 QueueUrl = queueUrl,
                 MessageBody = JsonSerializer.Serialize(new { jobId }),
+            });
+        }
+
+        return Results.Accepted(value: new { jobId });
+    }
+
+    private static async Task<IResult> AiImageStart(
+        AiImageRequest request,
+        IAiRecipeJobRepository jobRepository,
+        IAmazonSQS sqsClient,
+        IOptions<SqsSettings> sqsSettings,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        if (string.IsNullOrEmpty(request.ImageBase64))
+            return Results.BadRequest(new { error = "Image is required." });
+
+        var jobId = await jobRepository.CreateImageJobAsync(member.FamilyId, userId, request.ImageBase64);
+
+        var queueUrl = sqsSettings.Value.AiRecipeQueueUrl;
+        if (!string.IsNullOrEmpty(queueUrl))
+        {
+            await sqsClient.SendMessageAsync(new SendMessageRequest
+            {
+                QueueUrl = queueUrl,
+                MessageBody = JsonSerializer.Serialize(new { jobId, type = "image" }),
             });
         }
 

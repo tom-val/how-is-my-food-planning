@@ -72,15 +72,17 @@ Rules:
  */
 export const handler = async (event) => {
   for (const record of event.Records) {
-    const { jobId } = JSON.parse(record.body);
-    console.log(`[AiProcessor] Processing job ${jobId}`);
+    const body = JSON.parse(record.body);
+    const jobId = body.jobId;
+    const jobType = body.type ?? "text";
+    console.log(`[AiProcessor] Processing job ${jobId} (type: ${jobType})`);
 
     const pool = new pg.Pool(parseNpgsqlConnectionString(DB_CONNECTION_STRING));
 
     try {
       // Fetch job from DB.
       const jobResult = await pool.query(
-        "SELECT id, request_body FROM ai_recipe_jobs WHERE id = $1 AND status = 'pending'",
+        "SELECT id, request_body, image_base64 FROM ai_recipe_jobs WHERE id = $1 AND status = 'pending'",
         [jobId],
       );
 
@@ -90,21 +92,44 @@ export const handler = async (event) => {
       }
 
       const messages = jobResult.rows[0].request_body;
+      const imageBase64 = jobResult.rows[0].image_base64;
 
-      // Process messages — fetch URLs if present.
-      const input = [{ role: "user", content: "Respond in JSON format." }];
-      for (const msg of messages) {
-        let content = msg.content;
-        if (msg.role === "user") {
-          const url = extractUrl(content);
-          if (url) {
-            const pageContent = await fetchPageContent(url);
-            if (pageContent) {
-              content = `Extract the recipe from this page: ${url}\n\n--- PAGE CONTENT ---\n${pageContent}\n--- END PAGE CONTENT ---`;
+      let input;
+
+      if (jobType === "image" && imageBase64) {
+        // Image-based recipe extraction.
+        const mediaType = imageBase64.startsWith("/9j/") ? "image/jpeg" : "image/png";
+        input = [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: "Extract the recipe from this image. Respond in JSON format. Identify all ingredients with quantities and provide step-by-step instructions.",
+              },
+              {
+                type: "input_image",
+                image_url: `data:${mediaType};base64,${imageBase64}`,
+              },
+            ],
+          },
+        ];
+      } else {
+        // Text-based recipe generation.
+        input = [{ role: "user", content: "Respond in JSON format." }];
+        for (const msg of messages) {
+          let content = msg.content;
+          if (msg.role === "user") {
+            const url = extractUrl(content);
+            if (url) {
+              const pageContent = await fetchPageContent(url);
+              if (pageContent) {
+                content = `Extract the recipe from this page: ${url}\n\n--- PAGE CONTENT ---\n${pageContent}\n--- END PAGE CONTENT ---`;
+              }
             }
           }
+          input.push({ role: msg.role, content });
         }
-        input.push({ role: msg.role, content });
       }
 
       // Call OpenAI Responses API.

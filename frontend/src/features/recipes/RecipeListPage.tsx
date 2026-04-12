@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Typography,
@@ -18,7 +18,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Add, AutoAwesome } from "@mui/icons-material";
+import { Add, AutoAwesome, CameraAlt } from "@mui/icons-material";
+import { aiStartImageJob, aiPollJob } from "../../api/recipeApi";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listRecipes, deleteRecipe } from "../../api/recipeApi";
@@ -35,6 +36,47 @@ export default function RecipeListPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImageProcessing(true);
+
+    // Convert to base64.
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = (reader.result as string).split(",")[1];
+        const { jobId } = await aiStartImageJob(base64);
+
+        // Poll for result.
+        const poll = setInterval(async () => {
+          try {
+            const job = await aiPollJob(jobId);
+            if (job.status === "completed" && job.response?.recipes?.length) {
+              clearInterval(poll);
+              setIsImageProcessing(false);
+              navigate("/recipes/new", { state: { aiRecipe: job.response.recipes[0] } });
+            } else if (job.status === "failed") {
+              clearInterval(poll);
+              setIsImageProcessing(false);
+            }
+          } catch {
+            // Keep polling.
+          }
+        }, 5000);
+      } catch {
+        setIsImageProcessing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again.
+    e.target.value = "";
+  };
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ["recipes"],
@@ -72,8 +114,24 @@ export default function RecipeListPage() {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{t("recipes.title")}</Typography>
         <Box display="flex" gap={1}>
+          <input
+            type="file"
+            accept="image/*"
+            ref={imageInputRef}
+            onChange={handleImageUpload}
+            style={{ display: "none" }}
+          />
           {isMobile ? (
             <>
+              <IconButton
+                color="primary"
+                onClick={() => imageInputRef.current?.click()}
+                title={t("recipes.fromImage")}
+                disabled={isImageProcessing}
+                sx={{ border: 1, borderColor: "primary.main" }}
+              >
+                {isImageProcessing ? <CircularProgress size={24} /> : <CameraAlt />}
+              </IconButton>
               <IconButton
                 color="primary"
                 onClick={() => navigate("/recipes/ai")}
@@ -93,6 +151,14 @@ export default function RecipeListPage() {
             </>
           ) : (
             <>
+              <Button
+                variant="outlined"
+                startIcon={isImageProcessing ? <CircularProgress size={18} /> : <CameraAlt />}
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isImageProcessing}
+              >
+                {t("recipes.fromImage")}
+              </Button>
               <Button
                 variant="outlined"
                 startIcon={<AutoAwesome />}
