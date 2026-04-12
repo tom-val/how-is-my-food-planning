@@ -3,6 +3,30 @@ import pg from "pg";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DB_CONNECTION_STRING = process.env.DB_CONNECTION_STRING;
 
+/**
+ * Parse an Npgsql-style connection string into pg Pool config.
+ * Format: "Host=...;Port=...;Database=...;Username=...;Password=...;SSL Mode=Require;..."
+ */
+function parseNpgsqlConnectionString(connStr) {
+  const params = {};
+  for (const part of connStr.split(";")) {
+    const eqIdx = part.indexOf("=");
+    if (eqIdx < 0) continue;
+    const key = part.slice(0, eqIdx).trim().toLowerCase();
+    const value = part.slice(eqIdx + 1).trim();
+    params[key] = value;
+  }
+
+  return {
+    host: params.host,
+    port: parseInt(params.port || "5432", 10),
+    database: params.database,
+    user: params.username,
+    password: params.password,
+    ssl: params["ssl mode"]?.toLowerCase() === "require" ? { rejectUnauthorized: false } : false,
+  };
+}
+
 const SYSTEM_PROMPT = `You are a cooking assistant. The user will describe a dish or type of food they want,
 or page content from a recipe URL will be provided.
 
@@ -50,7 +74,7 @@ export const handler = async (event) => {
     const { jobId } = JSON.parse(record.body);
     console.log(`[AiProcessor] Processing job ${jobId}`);
 
-    const pool = new pg.Pool({ connectionString: DB_CONNECTION_STRING, ssl: { rejectUnauthorized: false } });
+    const pool = new pg.Pool(parseNpgsqlConnectionString(DB_CONNECTION_STRING));
 
     try {
       // Fetch job from DB.
