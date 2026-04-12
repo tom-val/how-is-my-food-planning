@@ -17,8 +17,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete, ArrowBack } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -63,6 +64,14 @@ export default function RecipeDetailPage() {
 
   return (
     <Box maxWidth={600} mx="auto">
+      <Button
+        startIcon={<ArrowBack />}
+        onClick={() => navigate("/recipes")}
+        sx={{ mb: 1 }}
+        size="small"
+      >
+        {t("recipes.title")}
+      </Button>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{recipe.name}</Typography>
         <Box display="flex" gap={1}>
@@ -83,6 +92,14 @@ export default function RecipeDetailPage() {
           </Button>
         </Box>
       </Box>
+
+      {recipe.categories.length > 0 && (
+        <Box display="flex" gap={0.5} mb={2}>
+          {recipe.categories.map((cat) => (
+            <Chip key={cat} label={t(`planner.${cat}`)} size="small" color="primary" variant="outlined" />
+          ))}
+        </Box>
+      )}
 
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         {t("recipes.ingredients")} ({ingredients.length})

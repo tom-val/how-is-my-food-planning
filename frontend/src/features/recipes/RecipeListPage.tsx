@@ -84,6 +84,13 @@ export default function RecipeListPage() {
                       variant="outlined"
                     />
                   </Box>
+                  {recipe.categories.length > 0 && (
+                    <Box display="flex" gap={0.5} mb={0.5}>
+                      {recipe.categories.map((cat) => (
+                        <Chip key={cat} label={t(`planner.${cat}`)} size="small" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />
+                      ))}
+                    </Box>
+                  )}
                   {ingredients.length > 0 && (
                     <Typography variant="body2" color="text.secondary" noWrap>
                       {ingredients.map((i) => i.name).join(", ")}
