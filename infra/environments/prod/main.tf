@@ -68,6 +68,7 @@ module "lambda" {
   api_gateway_execution_arn = module.api_gateway.execution_arn
   cors_allowed_origins      = local.cors_allowed_origins
   openai_api_key            = var.openai_api_key
+  sqs_ai_recipe_queue_url   = module.ai_processor.queue_url
 }
 
 module "api_gateway" {
@@ -80,6 +81,18 @@ module "api_gateway" {
   authorizer_id        = module.lambda_authorizer.authorizer_id
   throttle_rate_limit  = 10
   throttle_burst_limit = 25
+}
+
+# --- AI Processor (SQS + Lambda) ---
+
+module "ai_processor" {
+  source = "../../modules/ai-processor"
+
+  project_name         = local.project_name
+  environment          = local.environment
+  openai_api_key       = var.openai_api_key
+  db_connection_string = var.db_connection_string
+  api_lambda_role_name = module.lambda.role_name
 }
 
 module "lambda_authorizer" {

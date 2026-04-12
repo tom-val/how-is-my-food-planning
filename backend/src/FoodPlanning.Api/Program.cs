@@ -1,4 +1,5 @@
 using Amazon.Lambda.AspNetCoreServer;
+using Amazon.SQS;
 using FluentValidation;
 using FoodPlanning.Api.Features.Families;
 using FoodPlanning.Api.Features.Planner;
@@ -45,15 +46,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-// OpenAI.
+// SQS.
 builder.Services
-    .AddOptions<OpenAiSettings>()
-    .Bind(builder.Configuration.GetSection(OpenAiSettings.SectionName));
+    .AddOptions<SqsSettings>()
+    .Bind(builder.Configuration.GetSection(SqsSettings.SectionName));
 
-builder.Services.AddHttpClient<IAiRecipeService, AiRecipeService>(client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(55);
-});
+builder.Services.AddSingleton<IAmazonSQS>(_ => new AmazonSQSClient());
 
 // FluentValidation.
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();

@@ -73,6 +73,7 @@ export async function aiStartJob(
 export async function aiPollJob(jobId: string): Promise<AiRecipeJob> {
   const { data } = await apiClient.get<AiRecipeJob>(
     `/v1/recipes/ai/jobs/${jobId}`,
+    { timeout: 60000 },
   );
   return data;
 }

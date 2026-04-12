@@ -1,6 +1,11 @@
+using System.Text.Json;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 using FluentValidation;
 using FoodPlanning.Api.Features.Families;
+using FoodPlanning.Api.Shared;
 using FoodPlanning.Api.Shared.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace FoodPlanning.Api.Features.Recipes;
 
@@ -14,7 +19,6 @@ public static class RecipeEndpoints
         group.MapGet("/ingredients", ListIngredientNames);
         group.MapPost("/ai/start", AiStart);
         group.MapGet("/ai/jobs/{jobId:guid}", AiPoll);
-        group.MapPost("/ai/jobs/{jobId:guid}/process", AiProcess);
         group.MapPost("/", CreateRecipe);
         group.MapGet("/{id:guid}", GetRecipe);
         group.MapPut("/{id:guid}", UpdateRecipe);
@@ -121,6 +125,8 @@ public static class RecipeEndpoints
     private static async Task<IResult> AiStart(
         AiSuggestRequest request,
         IAiRecipeJobRepository jobRepository,
+        IAmazonSQS sqsClient,
+        IOptions<SqsSettings> sqsSettings,
         IFamilyMembershipService membership,
         HttpContext context)
     {
@@ -132,28 +138,16 @@ public static class RecipeEndpoints
 
         var jobId = await jobRepository.CreateJobAsync(member.FamilyId, userId, request.Messages);
 
-        // Fire-and-forget: trigger processing via a self-call.
-        _ = Task.Run(async () =>
+        // Send to SQS for async processing.
+        var queueUrl = sqsSettings.Value.AiRecipeQueueUrl;
+        if (!string.IsNullOrEmpty(queueUrl))
         {
-            try
+            await sqsClient.SendMessageAsync(new SendMessageRequest
             {
-                using var scope = context.RequestServices.CreateScope();
-                var aiService = scope.ServiceProvider.GetRequiredService<IAiRecipeService>();
-                var repo = scope.ServiceProvider.GetRequiredService<IAiRecipeJobRepository>();
-
-                var job = await repo.GetPendingJobAsync(jobId);
-                if (job is null) return;
-
-                var result = await aiService.SuggestAsync(job.Value.Messages);
-                await repo.CompleteJobAsync(jobId, result);
-            }
-            catch (Exception ex)
-            {
-                using var scope = context.RequestServices.CreateScope();
-                var repo = scope.ServiceProvider.GetRequiredService<IAiRecipeJobRepository>();
-                await repo.FailJobAsync(jobId, ex.Message);
-            }
-        });
+                QueueUrl = queueUrl,
+                MessageBody = JsonSerializer.Serialize(new { jobId }),
+            });
+        }
 
         return Results.Accepted(value: new { jobId });
     }
@@ -174,30 +168,4 @@ public static class RecipeEndpoints
         return Results.Ok(job);
     }
 
-    private static async Task<IResult> AiProcess(
-        Guid jobId,
-        IAiRecipeService aiService,
-        IAiRecipeJobRepository jobRepository,
-        IFamilyMembershipService membership,
-        HttpContext context)
-    {
-        var userId = context.GetUserId();
-        await membership.RequireMembershipAsync(userId);
-
-        var job = await jobRepository.GetPendingJobAsync(jobId);
-        if (job is null)
-            return Results.NotFound(new { error = "Job not found or already processed." });
-
-        try
-        {
-            var result = await aiService.SuggestAsync(job.Value.Messages);
-            await jobRepository.CompleteJobAsync(jobId, result);
-            return Results.Ok(new AiRecipeJob(jobId, "completed", result, null));
-        }
-        catch (Exception ex)
-        {
-            await jobRepository.FailJobAsync(jobId, ex.Message);
-            return Results.Ok(new AiRecipeJob(jobId, "failed", null, ex.Message));
-        }
-    }
 }

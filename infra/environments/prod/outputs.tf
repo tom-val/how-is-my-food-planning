@@ -29,3 +29,7 @@ output "cognito_user_pool_id" {
 output "cognito_client_id" {
   value = module.cognito.user_pool_client_id
 }
+
+output "ai_processor_function_name" {
+  value = module.ai_processor.function_name
+}

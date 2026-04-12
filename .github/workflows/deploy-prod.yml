@@ -25,6 +25,7 @@ jobs:
       api_endpoint: ${{ steps.outputs.outputs.api_endpoint }}
       cognito_user_pool_id: ${{ steps.outputs.outputs.cognito_user_pool_id }}
       cognito_client_id: ${{ steps.outputs.outputs.cognito_client_id }}
+      ai_processor_function_name: ${{ steps.outputs.outputs.ai_processor_function_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,6 +62,7 @@ jobs:
           echo "api_endpoint=$(terraform output -raw api_endpoint)" >> "$GITHUB_OUTPUT"
           echo "cognito_user_pool_id=$(terraform output -raw cognito_user_pool_id)" >> "$GITHUB_OUTPUT"
           echo "cognito_client_id=$(terraform output -raw cognito_client_id)" >> "$GITHUB_OUTPUT"
+          echo "ai_processor_function_name=$(terraform output -raw ai_processor_function_name)" >> "$GITHUB_OUTPUT"
 
   migrations:
     name: Database Migrations
@@ -197,3 +199,39 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ needs.infra.outputs.cloudfront_distribution_id }} \
             --paths "/*"
+
+  ai-processor:
+    name: Deploy AI Processor
+    needs: infra
+    runs-on: ubuntu-latest
+    environment: Prod
+    defaults:
+      run:
+        working-directory: backend/src/ai-processor
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/src/ai-processor/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package
+        run: zip -r ../../../ai-processor.zip .
+
+      - name: Deploy Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ needs.infra.outputs.ai_processor_function_name }} \
+            --zip-file fileb://../../../ai-processor.zip

@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.APIGatewayEvents" Version="2.7.3" />
     <PackageReference Include="Amazon.Lambda.AspNetCoreServer.Hosting" Version="1.7.2" />
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.2.25" />
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageReference Include="Npgsql" Version="9.0.3" />

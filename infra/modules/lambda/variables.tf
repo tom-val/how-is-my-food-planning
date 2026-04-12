@@ -25,3 +25,8 @@ variable "openai_api_key" {
   sensitive = true
   default   = ""
 }
+
+variable "sqs_ai_recipe_queue_url" {
+  type    = string
+  default = ""
+}
