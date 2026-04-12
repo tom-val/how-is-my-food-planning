@@ -121,8 +121,36 @@ public class AiRecipeService : IAiRecipeService
         }
 
         // Parse the Responses API response.
+        _logger.LogInformation("[AiRecipe] Response: {Body}", responseBody);
         using var doc = JsonDocument.Parse(responseBody);
-        var content = doc.RootElement.GetProperty("output_text").GetString();
+        var root = doc.RootElement;
+
+        // Try output_text first, then fall back to searching the output array.
+        string? content = null;
+        if (root.TryGetProperty("output_text", out var outputText))
+        {
+            content = outputText.GetString();
+        }
+        else if (root.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in output.EnumerateArray())
+            {
+                if (item.TryGetProperty("type", out var type) && type.GetString() == "message" &&
+                    item.TryGetProperty("content", out var msgContent) && msgContent.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var part in msgContent.EnumerateArray())
+                    {
+                        if (part.TryGetProperty("type", out var partType) && partType.GetString() == "output_text" &&
+                            part.TryGetProperty("text", out var text))
+                        {
+                            content = text.GetString();
+                            break;
+                        }
+                    }
+                }
+                if (content != null) break;
+            }
+        }
 
         if (string.IsNullOrEmpty(content))
             throw new InvalidOperationException("Empty response from OpenAI.");
