@@ -268,14 +268,45 @@ public class AiRecipeService : IAiRecipeService
 
     private static string StripHtmlNoise(string html)
     {
+        // Try to extract just the article/post content to reduce noise.
+        var articleContent = ExtractArticleContent(html) ?? html;
+
         // Remove script and style blocks.
         var result = System.Text.RegularExpressions.Regex.Replace(
-            html, @"<(script|style)[^>]*>[\s\S]*?</\1>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        // Remove HTML tags.
+            articleContent, @"<(script|style|nav|header|footer|aside)[^>]*>[\s\S]*?</\1>", "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        // Remove HTML comments.
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"<!--[\s\S]*?-->", "");
+        // Remove HTML tags but keep line breaks for structure.
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"<(br|/p|/div|/li|/h[1-6])[^>]*>", "\n",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         result = System.Text.RegularExpressions.Regex.Replace(result, @"<[^>]+>", " ");
-        // Collapse whitespace.
-        result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ");
+        // Collapse whitespace (but keep newlines).
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"[^\S\n]+", " ");
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"\n{3,}", "\n\n");
         return result.Trim();
+    }
+
+    private static string? ExtractArticleContent(string html)
+    {
+        // Try common article content selectors used by WordPress and blog sites.
+        string[] patterns =
+        [
+            @"<article[^>]*>([\s\S]*?)</article>",
+            @"<div[^>]*class=""[^""]*entry-content[^""]*""[^>]*>([\s\S]*?)</div>\s*(?=<div|<footer|<aside|</article)",
+            @"<div[^>]*class=""[^""]*post-content[^""]*""[^>]*>([\s\S]*?)</div>\s*(?=<div|<footer|<aside)",
+            @"<div[^>]*class=""[^""]*content-area[^""]*""[^>]*>([\s\S]*?)</div>\s*(?=<div|<footer|<aside)",
+        ];
+
+        foreach (var pattern in patterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                html, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success && match.Groups[1].Value.Length > 200)
+                return match.Groups[1].Value;
+        }
+
+        return null;
     }
 
     private static string ExtractJson(string text)
