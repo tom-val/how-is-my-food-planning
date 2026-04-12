@@ -12,8 +12,16 @@ import {
   CircularProgress,
   Chip,
   alpha,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
-import { ArrowBack, Send, AutoAwesome } from "@mui/icons-material";
+import { ArrowBack, Send, AutoAwesome, Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { aiSuggestRecipes } from "../../api/recipeApi";
@@ -31,6 +39,7 @@ export default function AiRecipePage() {
   const [input, setInput] = useState("");
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [apiMessages, setApiMessages] = useState<AiMessage[]>([]);
+  const [previewRecipe, setPreviewRecipe] = useState<AiSuggestedRecipe | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -160,20 +169,11 @@ export default function AiRecipePage() {
                 )}
                 {entry.recipes?.map((recipe, ri) => (
                   <Card key={ri} sx={{ mb: 1 }}>
-                    <CardActionArea onClick={() => handlePickRecipe(recipe)}>
+                    <CardActionArea onClick={() => setPreviewRecipe(recipe)}>
                       <CardContent sx={{ py: 1.5 }}>
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Typography variant="h6" fontSize="1rem">
-                            {recipe.name}
-                          </Typography>
-                          <Button size="small" variant="contained">
-                            {t("recipes.aiUseRecipe")}
-                          </Button>
-                        </Box>
+                        <Typography variant="h6" fontSize="1rem">
+                          {recipe.name}
+                        </Typography>
                         {recipe.categories.length > 0 && (
                           <Box display="flex" gap={0.5} mt={0.5}>
                             {recipe.categories.map((cat) => (
@@ -246,6 +246,80 @@ export default function AiRecipePage() {
           <Send />
         </IconButton>
       </Box>
+
+      {/* Recipe preview dialog */}
+      <Dialog
+        open={!!previewRecipe}
+        onClose={() => setPreviewRecipe(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        {previewRecipe && (
+          <>
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {previewRecipe.name}
+              <IconButton size="small" onClick={() => setPreviewRecipe(null)}>
+                <Close />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              {previewRecipe.categories.length > 0 && (
+                <Box display="flex" gap={0.5} mb={2}>
+                  {previewRecipe.categories.map((cat) => (
+                    <Chip
+                      key={cat}
+                      label={t(`planner.${cat}`)}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              )}
+
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                {t("recipes.ingredients")} ({previewRecipe.ingredients.length})
+              </Typography>
+              <List dense disablePadding>
+                {previewRecipe.ingredients.map((ing, i) => (
+                  <ListItem key={i} disableGutters sx={{ py: 0.25 }}>
+                    <ListItemText
+                      primary={ing.name}
+                      secondary={[ing.quantity, ing.unit].filter(Boolean).join(" ") || undefined}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+
+              {previewRecipe.instructions && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    {t("recipes.instructions")}
+                  </Typography>
+                  <Typography variant="body2" whiteSpace="pre-wrap">
+                    {previewRecipe.instructions}
+                  </Typography>
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPreviewRecipe(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  handlePickRecipe(previewRecipe);
+                  setPreviewRecipe(null);
+                }}
+              >
+                {t("recipes.aiUseRecipe")}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 }
