@@ -52,7 +52,7 @@ builder.Services
 
 builder.Services.AddHttpClient<IAiRecipeService, AiRecipeService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(25);
+    client.Timeout = TimeSpan.FromSeconds(55);
 });
 
 // FluentValidation.
@@ -62,6 +62,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
 builder.Services.AddScoped<IFamilyMembershipService, FamilyMembershipService>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+builder.Services.AddScoped<IAiRecipeJobRepository, AiRecipeJobRepository>();
 builder.Services.AddScoped<IPlannerRepository, PlannerRepository>();
 builder.Services.AddScoped<IShoppingRepository, ShoppingRepository>();
 

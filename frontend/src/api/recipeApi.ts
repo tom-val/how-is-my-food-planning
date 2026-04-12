@@ -53,13 +53,26 @@ export interface AiSuggestResponse {
   assistantMessage: string;
 }
 
-export async function aiSuggestRecipes(
+export interface AiRecipeJob {
+  id: string;
+  status: "pending" | "completed" | "failed";
+  response: AiSuggestResponse | null;
+  error: string | null;
+}
+
+export async function aiStartJob(
   messages: AiMessage[],
-): Promise<AiSuggestResponse> {
-  const { data } = await apiClient.post<AiSuggestResponse>(
-    "/v1/recipes/ai/suggest",
+): Promise<{ jobId: string }> {
+  const { data } = await apiClient.post<{ jobId: string }>(
+    "/v1/recipes/ai/start",
     { messages },
-    { timeout: 60000 },
+  );
+  return data;
+}
+
+export async function aiPollJob(jobId: string): Promise<AiRecipeJob> {
+  const { data } = await apiClient.get<AiRecipeJob>(
+    `/v1/recipes/ai/jobs/${jobId}`,
   );
   return data;
 }

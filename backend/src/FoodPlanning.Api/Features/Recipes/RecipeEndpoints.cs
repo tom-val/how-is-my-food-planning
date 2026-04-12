@@ -12,7 +12,9 @@ public static class RecipeEndpoints
 
         group.MapGet("/", ListRecipes);
         group.MapGet("/ingredients", ListIngredientNames);
-        group.MapPost("/ai/suggest", AiSuggest);
+        group.MapPost("/ai/start", AiStart);
+        group.MapGet("/ai/jobs/{jobId:guid}", AiPoll);
+        group.MapPost("/ai/jobs/{jobId:guid}/process", AiProcess);
         group.MapPost("/", CreateRecipe);
         group.MapGet("/{id:guid}", GetRecipe);
         group.MapPut("/{id:guid}", UpdateRecipe);
@@ -116,19 +118,86 @@ public static class RecipeEndpoints
             : Results.NotFound(new { error = "Recipe not found." });
     }
 
-    private static async Task<IResult> AiSuggest(
+    private static async Task<IResult> AiStart(
         AiSuggestRequest request,
-        IAiRecipeService aiService,
+        IAiRecipeJobRepository jobRepository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        if (request.Messages.Count == 0)
+            return Results.BadRequest(new { error = "At least one message is required." });
+
+        var jobId = await jobRepository.CreateJobAsync(member.FamilyId, userId, request.Messages);
+
+        // Fire-and-forget: trigger processing via a self-call.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = context.RequestServices.CreateScope();
+                var aiService = scope.ServiceProvider.GetRequiredService<IAiRecipeService>();
+                var repo = scope.ServiceProvider.GetRequiredService<IAiRecipeJobRepository>();
+
+                var job = await repo.GetPendingJobAsync(jobId);
+                if (job is null) return;
+
+                var result = await aiService.SuggestAsync(job.Value.Messages);
+                await repo.CompleteJobAsync(jobId, result);
+            }
+            catch (Exception ex)
+            {
+                using var scope = context.RequestServices.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IAiRecipeJobRepository>();
+                await repo.FailJobAsync(jobId, ex.Message);
+            }
+        });
+
+        return Results.Accepted(value: new { jobId });
+    }
+
+    private static async Task<IResult> AiPoll(
+        Guid jobId,
+        IAiRecipeJobRepository jobRepository,
         IFamilyMembershipService membership,
         HttpContext context)
     {
         var userId = context.GetUserId();
         await membership.RequireMembershipAsync(userId);
 
-        if (request.Messages.Count == 0)
-            return Results.BadRequest(new { error = "At least one message is required." });
+        var job = await jobRepository.GetJobAsync(jobId);
+        if (job is null)
+            return Results.NotFound(new { error = "Job not found." });
 
-        var result = await aiService.SuggestAsync(request.Messages);
-        return Results.Ok(result);
+        return Results.Ok(job);
+    }
+
+    private static async Task<IResult> AiProcess(
+        Guid jobId,
+        IAiRecipeService aiService,
+        IAiRecipeJobRepository jobRepository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        await membership.RequireMembershipAsync(userId);
+
+        var job = await jobRepository.GetPendingJobAsync(jobId);
+        if (job is null)
+            return Results.NotFound(new { error = "Job not found or already processed." });
+
+        try
+        {
+            var result = await aiService.SuggestAsync(job.Value.Messages);
+            await jobRepository.CompleteJobAsync(jobId, result);
+            return Results.Ok(new AiRecipeJob(jobId, "completed", result, null));
+        }
+        catch (Exception ex)
+        {
+            await jobRepository.FailJobAsync(jobId, ex.Message);
+            return Results.Ok(new AiRecipeJob(jobId, "failed", null, ex.Message));
+        }
     }
 }

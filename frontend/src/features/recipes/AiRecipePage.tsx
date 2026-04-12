@@ -23,8 +23,7 @@ import {
 } from "@mui/material";
 import { ArrowBack, Send, AutoAwesome, Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
-import { aiSuggestRecipes } from "../../api/recipeApi";
+import { aiStartJob, aiPollJob } from "../../api/recipeApi";
 import type { AiMessage, AiSuggestedRecipe } from "../../api/recipeApi";
 
 interface ChatEntry {
@@ -40,48 +39,78 @@ export default function AiRecipePage() {
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [apiMessages, setApiMessages] = useState<AiMessage[]>([]);
   const [previewRecipe, setPreviewRecipe] = useState<AiSuggestedRecipe | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
-  const mutation = useMutation({
-    mutationFn: (messages: AiMessage[]) => aiSuggestRecipes(messages),
-    onSuccess: (data, variables) => {
-      setChat((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data.message,
-          recipes: data.recipes,
-        },
-      ]);
-      setApiMessages([
-        ...variables,
-        { role: "assistant", content: data.assistantMessage },
-      ]);
-    },
-    onError: (err: Error) => {
-      setChat((prev) => [
-        ...prev,
-        { role: "assistant", content: err.message },
-      ]);
-    },
-  });
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
-  const handleSend = () => {
+  const startPolling = (jobId: string, sentMessages: AiMessage[]) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const job = await aiPollJob(jobId);
+        if (job.status === "completed" && job.response) {
+          clearInterval(pollRef.current!);
+          pollRef.current = null;
+          setIsLoading(false);
+          setChat((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: job.response!.message,
+              recipes: job.response!.recipes,
+            },
+          ]);
+          setApiMessages([
+            ...sentMessages,
+            { role: "assistant", content: job.response!.assistantMessage },
+          ]);
+        } else if (job.status === "failed") {
+          clearInterval(pollRef.current!);
+          pollRef.current = null;
+          setIsLoading(false);
+          setChat((prev) => [
+            ...prev,
+            { role: "assistant", content: job.error ?? "Something went wrong." },
+          ]);
+        }
+      } catch {
+        // Keep polling on network errors.
+      }
+    }, 5000);
+  };
+
+  const handleSend = async () => {
     const text = input.trim();
-    if (!text || mutation.isPending) return;
+    if (!text || isLoading) return;
 
     setInput("");
+    setIsLoading(true);
     setChat((prev) => [...prev, { role: "user", content: text }]);
 
     const newMessages: AiMessage[] = [
       ...apiMessages,
       { role: "user", content: text },
     ];
-    mutation.mutate(newMessages);
+
+    try {
+      const { jobId } = await aiStartJob(newMessages);
+      startPolling(jobId, newMessages);
+    } catch (err) {
+      setIsLoading(false);
+      setChat((prev) => [
+        ...prev,
+        { role: "assistant", content: err instanceof Error ? err.message : "Error" },
+      ]);
+    }
   };
 
   const handlePickRecipe = (recipe: AiSuggestedRecipe) => {
@@ -204,7 +233,7 @@ export default function AiRecipePage() {
           </Box>
         ))}
 
-        {mutation.isPending && (
+        {isLoading && (
           <Box display="flex" justifyContent="center" py={2}>
             <CircularProgress size={24} />
           </Box>
@@ -235,13 +264,13 @@ export default function AiRecipePage() {
               handleSend();
             }
           }}
-          disabled={mutation.isPending}
+          disabled={isLoading}
           autoFocus
         />
         <IconButton
           color="primary"
           onClick={handleSend}
-          disabled={!input.trim() || mutation.isPending}
+          disabled={!input.trim() || isLoading}
         >
           <Send />
         </IconButton>

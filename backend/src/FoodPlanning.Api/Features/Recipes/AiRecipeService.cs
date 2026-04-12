@@ -34,12 +34,20 @@ public class AiRecipeService : IAiRecipeService
 
     private const string SystemPrompt = """
         You are a cooking assistant. The user will describe a dish or type of food they want,
-        or provide a URL to a recipe page. If a URL is provided, use web search to fetch the
-        recipe from that page.
+        or provide a URL to a recipe page.
 
-        Respond with 1-3 recipe suggestions in JSON format.
+        WHEN PAGE CONTENT IS PROVIDED:
+        - The page content has been fetched for you. Extract the EXACT recipe from it.
+        - Do NOT make up or guess the recipe. Use the EXACT ingredients, quantities, and instructions from the provided content.
+        - If the content is structured data (JSON-LD), parse it accurately.
+        - If the page is in Lithuanian, keep the recipe in Lithuanian.
+        - Return exactly 1 recipe matching what is on the page.
 
-        IMPORTANT: Always respond with valid JSON matching this exact schema:
+        WHEN A DISH NAME IS PROVIDED:
+        - Suggest 1-3 recipe variations.
+        - Be creative but accurate with ingredients and quantities.
+
+        ALWAYS respond with valid JSON matching this exact schema:
         {
           "recipes": [
             {
@@ -62,7 +70,6 @@ public class AiRecipeService : IAiRecipeService
         - Instructions should be detailed and in the same language as the user's request
         - Recipe names should be in the same language as the user's request
         - If the user asks to modify a recipe, return the modified version
-        - If the user provides a URL, fetch the recipe from it and convert to the JSON format
         - Always return valid JSON, nothing else
         """;
 
@@ -89,39 +96,34 @@ public class AiRecipeService : IAiRecipeService
         {
             new { role = "user", content = "Respond in JSON format." }
         };
+
+        // If any message contains a URL, fetch the page content and inject it.
         foreach (var msg in messages)
         {
-            input.Add(new { role = msg.Role, content = msg.Content });
+            var msgContent = msg.Content;
+            if (msg.Role == "user")
+            {
+                var url = ExtractUrl(msgContent);
+                if (url != null)
+                {
+                    var pageContent = await FetchPageContentAsync(url);
+                    if (pageContent != null)
+                    {
+                        msgContent = $"Extract the recipe from this page: {url}\n\n--- PAGE CONTENT ---\n{pageContent}\n--- END PAGE CONTENT ---";
+                    }
+                }
+            }
+            input.Add(new { role = msg.Role, content = msgContent });
         }
 
-        // Only enable web search when a URL is detected in the conversation.
-        var hasUrl = messages.Any(m =>
-            m.Content.Contains("http://", StringComparison.OrdinalIgnoreCase) ||
-            m.Content.Contains("https://", StringComparison.OrdinalIgnoreCase));
-
-        object requestBody;
-        if (hasUrl)
+        var requestBody = new
         {
-            requestBody = new
-            {
-                model = "gpt-5.4",
-                instructions = SystemPrompt,
-                input,
-                tools = new object[] { new { type = "web_search" } },
-                max_output_tokens = 50000,
-            };
-        }
-        else
-        {
-            requestBody = new
-            {
-                model = "gpt-5.4",
-                instructions = SystemPrompt,
-                input,
-                text = new { format = new { type = "json_object" } },
-                max_output_tokens = 50000,
-            };
-        }
+            model = "gpt-5.4",
+            instructions = SystemPrompt,
+            input,
+            text = new { format = new { type = "json_object" } },
+            max_output_tokens = 50000,
+        };
 
         var json = JsonSerializer.Serialize(requestBody, JsonOptions);
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses")
@@ -187,6 +189,93 @@ public class AiRecipeService : IAiRecipeService
             parsed.Recipes ?? [],
             parsed.Message ?? "",
             content);
+    }
+
+    private static string? ExtractUrl(string text)
+    {
+        // Simple URL extraction — find the first http(s) URL in the text.
+        var words = text.Split(' ', '\n', '\t');
+        return words.FirstOrDefault(w =>
+            w.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            w.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<string?> FetchPageContentAsync(string url)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("User-Agent", "Mozilla/5.0 (compatible; FoodPlanningBot/1.0)");
+            request.Headers.Add("Accept", "text/html,application/xhtml+xml");
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await _httpClient.SendAsync(request, cts.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("[AiRecipe] Failed to fetch URL {Url}: {StatusCode}", url, response.StatusCode);
+                return null;
+            }
+
+            var html = await response.Content.ReadAsStringAsync(cts.Token);
+
+            // Try to extract JSON-LD structured data (schema.org/Recipe) — most recipe sites have this.
+            var jsonLd = ExtractJsonLd(html);
+            if (jsonLd != null)
+            {
+                _logger.LogInformation("[AiRecipe] Found JSON-LD recipe data from {Url}", url);
+                return $"STRUCTURED RECIPE DATA (JSON-LD):\n{jsonLd}";
+            }
+
+            // Fall back to raw HTML, truncated to avoid token limits.
+            _logger.LogInformation("[AiRecipe] No JSON-LD found, using raw HTML from {Url}", url);
+            // Strip script/style tags and truncate.
+            var cleaned = StripHtmlNoise(html);
+            return cleaned.Length > 15000 ? cleaned[..15000] : cleaned;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AiRecipe] Error fetching URL {Url}", url);
+            return null;
+        }
+    }
+
+    private static string? ExtractJsonLd(string html)
+    {
+        // Find all <script type="application/ld+json"> blocks and look for Recipe schema.
+        const string openTag = "<script type=\"application/ld+json\">";
+        const string closeTag = "</script>";
+
+        var index = 0;
+        while (true)
+        {
+            var start = html.IndexOf(openTag, index, StringComparison.OrdinalIgnoreCase);
+            if (start < 0) break;
+
+            var contentStart = start + openTag.Length;
+            var end = html.IndexOf(closeTag, contentStart, StringComparison.OrdinalIgnoreCase);
+            if (end < 0) break;
+
+            var jsonText = html[contentStart..end].Trim();
+            if (jsonText.Contains("Recipe", StringComparison.OrdinalIgnoreCase))
+                return jsonText;
+
+            index = end + closeTag.Length;
+        }
+
+        return null;
+    }
+
+    private static string StripHtmlNoise(string html)
+    {
+        // Remove script and style blocks.
+        var result = System.Text.RegularExpressions.Regex.Replace(
+            html, @"<(script|style)[^>]*>[\s\S]*?</\1>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        // Remove HTML tags.
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"<[^>]+>", " ");
+        // Collapse whitespace.
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ");
+        return result.Trim();
     }
 
     private static string ExtractJson(string text)
