@@ -13,6 +13,7 @@ export interface Recipe {
   familyId: string;
   name: string;
   instructions: string | null;
+  categories: string[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -49,11 +50,13 @@ export async function getRecipe(id: string): Promise<RecipeWithIngredients> {
 export async function createRecipe(
   name: string,
   instructions: string | null,
+  categories: string[],
   ingredients: IngredientInput[],
 ): Promise<RecipeWithIngredients> {
   const { data } = await apiClient.post<RecipeWithIngredients>("/v1/recipes", {
     name,
     instructions,
+    categories,
     ingredients,
   });
   return data;
@@ -63,11 +66,12 @@ export async function updateRecipe(
   id: string,
   name: string,
   instructions: string | null,
+  categories: string[],
   ingredients: IngredientInput[],
 ): Promise<RecipeWithIngredients> {
   const { data } = await apiClient.put<RecipeWithIngredients>(
     `/v1/recipes/${id}`,
-    { name, instructions, ingredients },
+    { name, instructions, categories, ingredients },
   );
   return data;
 }

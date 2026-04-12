@@ -32,6 +32,7 @@ import {
   Print,
   Person,
   PersonOff,
+  Casino,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -118,14 +119,26 @@ export default function PlannerPage() {
     },
   });
 
+  const getRecipesForMealType = useCallback(
+    (mealType: string) => {
+      if (!recipes) return [];
+      return recipes.filter(
+        ({ recipe }) =>
+          recipe.categories.length === 0 ||
+          recipe.categories.includes(mealType),
+      );
+    },
+    [recipes],
+  );
+
   const filteredRecipes = useMemo(() => {
-    if (!recipes) return [];
-    if (!recipeSearch.trim()) return recipes;
+    const base = addDialog ? getRecipesForMealType(addDialog.mealType) : recipes ?? [];
+    if (!recipeSearch.trim()) return base;
     const q = recipeSearch.toLowerCase();
-    return recipes.filter(({ recipe }) =>
+    return base.filter(({ recipe }) =>
       recipe.name.toLowerCase().includes(q),
     );
-  }, [recipes, recipeSearch]);
+  }, [recipes, recipeSearch, addDialog, getRecipesForMealType]);
 
   const addMutation = useMutation({
     mutationFn: (recipeId: string) =>
@@ -363,6 +376,28 @@ export default function PlannerPage() {
                         }}
                       >
                         <Add fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        className="no-print"
+                        title={t("planner.randomRecipe")}
+                        onClick={() => {
+                          const available = getRecipesForMealType(mealType);
+                          if (available.length === 0) return;
+                          const pick = available[Math.floor(Math.random() * available.length)];
+                          addMeal(planData!.plan.id, dayIndex, mealType, pick.recipe.id).then(() =>
+                            queryClient.invalidateQueries({ queryKey: ["plan", weekStart] }),
+                          );
+                        }}
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          border: 1,
+                          borderColor: "divider",
+                          borderStyle: "dashed",
+                        }}
+                      >
+                        <Casino fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>

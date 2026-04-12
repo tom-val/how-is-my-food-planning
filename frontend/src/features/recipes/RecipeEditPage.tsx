@@ -25,12 +25,14 @@ export default function RecipeEditPage() {
     mutationFn: ({
       name,
       instructions,
+      categories,
       ingredients,
     }: {
       name: string;
       instructions: string | null;
+      categories: string[];
       ingredients: IngredientInput[];
-    }) => updateRecipe(id!, name, instructions, ingredients),
+    }) => updateRecipe(id!, name, instructions, categories, ingredients),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       enqueueSnackbar(t("recipes.saved"), { variant: "success" });
@@ -65,13 +67,14 @@ export default function RecipeEditPage() {
       <RecipeForm
         initialName={data.recipe.name}
         initialInstructions={data.recipe.instructions}
+        initialCategories={data.recipe.categories}
         initialIngredients={data.ingredients.map((i) => ({
           name: i.name,
           quantity: i.quantity,
           unit: i.unit,
         }))}
-        onSubmit={(name, instructions, ingredients) =>
-          mutation.mutate({ name, instructions, ingredients })
+        onSubmit={(name, instructions, categories, ingredients) =>
+          mutation.mutate({ name, instructions, categories, ingredients })
         }
         isSubmitting={mutation.isPending}
         submitLabel={t("common.save")}

@@ -68,7 +68,9 @@
     "deleteConfirmTitle": "Ištrinti receptą?",
     "deleteConfirmMessage": "Ar tikrai norite ištrinti {{name}}?",
     "saved": "Receptas išsaugotas",
-    "deleted": "Receptas ištrintas"
+    "deleted": "Receptas ištrintas",
+    "categories": "Kategorijos",
+    "categoriesHint": "Nepasirinkus jokios, receptas tiks visoms kategorijoms"
   },
   "planner": {
     "title": "Savaitės planas",
@@ -85,7 +87,8 @@
     "randomWeekAfter": "Atsitiktinai po dviejų savaičių",
     "random30Days": "Atsitiktinai per 30 dienų",
     "random6Months": "Atsitiktinai per 6 mėnesius",
-    "unassigned": "Nepriskirta"
+    "unassigned": "Nepriskirta",
+    "randomRecipe": "Atsitiktinis receptas"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",

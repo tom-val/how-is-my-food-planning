@@ -18,12 +18,14 @@ export default function RecipeCreatePage() {
     mutationFn: ({
       name,
       instructions,
+      categories,
       ingredients,
     }: {
       name: string;
       instructions: string | null;
+      categories: string[];
       ingredients: IngredientInput[];
-    }) => createRecipe(name, instructions, ingredients),
+    }) => createRecipe(name, instructions, categories, ingredients),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       enqueueSnackbar(t("recipes.saved"), { variant: "success" });
@@ -44,8 +46,8 @@ export default function RecipeCreatePage() {
         </Button>
       </Box>
       <RecipeForm
-        onSubmit={(name, instructions, ingredients) =>
-          mutation.mutate({ name, instructions, ingredients })
+        onSubmit={(name, instructions, categories, ingredients) =>
+          mutation.mutate({ name, instructions, categories, ingredients })
         }
         isSubmitting={mutation.isPending}
         submitLabel={t("common.save")}

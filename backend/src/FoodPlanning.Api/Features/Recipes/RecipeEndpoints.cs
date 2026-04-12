@@ -57,7 +57,7 @@ public static class RecipeEndpoints
         var member = await membership.RequireMembershipAsync(userId);
 
         var recipe = await repository.CreateAsync(
-            member.FamilyId, userId, request.Name, request.Instructions, request.Ingredients);
+            member.FamilyId, userId, request.Name, request.Instructions, request.Categories ?? [], request.Ingredients);
 
         return Results.Created($"/v1/recipes/{recipe.Recipe.Id}", recipe);
     }
@@ -93,7 +93,7 @@ public static class RecipeEndpoints
         var member = await membership.RequireMembershipAsync(userId);
 
         var recipe = await repository.UpdateAsync(
-            id, member.FamilyId, request.Name, request.Instructions, request.Ingredients);
+            id, member.FamilyId, request.Name, request.Instructions, request.Categories ?? [], request.Ingredients);
 
         return recipe is null
             ? Results.NotFound(new { error = "Recipe not found." })

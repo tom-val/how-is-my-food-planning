@@ -68,7 +68,9 @@
     "deleteConfirmTitle": "Delete recipe?",
     "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"?",
     "saved": "Recipe saved",
-    "deleted": "Recipe deleted"
+    "deleted": "Recipe deleted",
+    "categories": "Categories",
+    "categoriesHint": "Leave empty if the recipe suits any meal"
   },
   "planner": {
     "title": "Weekly Plan",
@@ -85,7 +87,8 @@
     "randomWeekAfter": "Random day week after next",
     "random30Days": "Random day within 30 days",
     "random6Months": "Random day within 6 months",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "randomRecipe": "Random recipe"
   },
   "shopping": {
     "title": "Shopping List",

@@ -8,6 +8,7 @@ public record Recipe(
     Guid FamilyId,
     string Name,
     string? Instructions,
+    string[] Categories,
     string CreatedBy,
     DateTime CreatedAt,
     DateTime UpdatedAt);
@@ -25,8 +26,8 @@ public interface IRecipeRepository
 {
     Task<List<RecipeWithIngredients>> GetAllByFamilyAsync(Guid familyId);
     Task<RecipeWithIngredients?> GetByIdAsync(Guid id, Guid familyId);
-    Task<RecipeWithIngredients> CreateAsync(Guid familyId, string userId, string name, string? instructions, List<IngredientInput> ingredients);
-    Task<RecipeWithIngredients?> UpdateAsync(Guid id, Guid familyId, string name, string? instructions, List<IngredientInput> ingredients);
+    Task<RecipeWithIngredients> CreateAsync(Guid familyId, string userId, string name, string? instructions, string[] categories, List<IngredientInput> ingredients);
+    Task<RecipeWithIngredients?> UpdateAsync(Guid id, Guid familyId, string name, string? instructions, string[] categories, List<IngredientInput> ingredients);
     Task<bool> DeleteAsync(Guid id, Guid familyId);
     Task<List<string>> GetDistinctIngredientNamesAsync(Guid familyId);
 }
@@ -50,7 +51,7 @@ public class RecipeRepository : IRecipeRepository
         // Fetch all recipes for the family.
         await using var recipeCmd = new NpgsqlCommand(
             """
-            SELECT id, family_id, name, instructions, created_by, created_at, updated_at
+            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at
             FROM recipes
             WHERE family_id = @familyId
             ORDER BY name
@@ -106,7 +107,7 @@ public class RecipeRepository : IRecipeRepository
 
         await using var recipeCmd = new NpgsqlCommand(
             """
-            SELECT id, family_id, name, instructions, created_by, created_at, updated_at
+            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at
             FROM recipes
             WHERE id = @id AND family_id = @familyId
             """, conn);
@@ -128,7 +129,7 @@ public class RecipeRepository : IRecipeRepository
     }
 
     public async Task<RecipeWithIngredients> CreateAsync(
-        Guid familyId, string userId, string name, string? instructions, List<IngredientInput> ingredients)
+        Guid familyId, string userId, string name, string? instructions, string[] categories, List<IngredientInput> ingredients)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
@@ -136,13 +137,14 @@ public class RecipeRepository : IRecipeRepository
 
         await using var recipeCmd = new NpgsqlCommand(
             """
-            INSERT INTO recipes (family_id, name, instructions, created_by)
-            VALUES (@familyId, @name, @instructions, @userId)
-            RETURNING id, family_id, name, instructions, created_by, created_at, updated_at
+            INSERT INTO recipes (family_id, name, instructions, categories, created_by)
+            VALUES (@familyId, @name, @instructions, @categories, @userId)
+            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at
             """, conn, tx);
         recipeCmd.Parameters.AddWithValue("familyId", familyId);
         recipeCmd.Parameters.AddWithValue("name", name);
         recipeCmd.Parameters.AddWithValue("instructions", (object?)instructions ?? DBNull.Value);
+        recipeCmd.Parameters.AddWithValue("categories", categories);
         recipeCmd.Parameters.AddWithValue("userId", userId);
 
         Recipe? recipe = null;
@@ -162,7 +164,7 @@ public class RecipeRepository : IRecipeRepository
     }
 
     public async Task<RecipeWithIngredients?> UpdateAsync(
-        Guid id, Guid familyId, string name, string? instructions, List<IngredientInput> ingredients)
+        Guid id, Guid familyId, string name, string? instructions, string[] categories, List<IngredientInput> ingredients)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
@@ -171,14 +173,15 @@ public class RecipeRepository : IRecipeRepository
         await using var recipeCmd = new NpgsqlCommand(
             """
             UPDATE recipes
-            SET name = @name, instructions = @instructions, updated_at = now()
+            SET name = @name, instructions = @instructions, categories = @categories, updated_at = now()
             WHERE id = @id AND family_id = @familyId
-            RETURNING id, family_id, name, instructions, created_by, created_at, updated_at
+            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at
             """, conn, tx);
         recipeCmd.Parameters.AddWithValue("id", id);
         recipeCmd.Parameters.AddWithValue("familyId", familyId);
         recipeCmd.Parameters.AddWithValue("name", name);
         recipeCmd.Parameters.AddWithValue("instructions", (object?)instructions ?? DBNull.Value);
+        recipeCmd.Parameters.AddWithValue("categories", categories);
 
         Recipe? recipe = null;
         await using (var reader = await recipeCmd.ExecuteReaderAsync())
@@ -288,9 +291,10 @@ public class RecipeRepository : IRecipeRepository
         reader.GetGuid(1),
         reader.GetString(2),
         reader.IsDBNull(3) ? null : reader.GetString(3),
-        reader.GetString(4),
-        reader.GetDateTime(5),
-        reader.GetDateTime(6));
+        reader.IsDBNull(4) ? [] : reader.GetFieldValue<string[]>(4),
+        reader.GetString(5),
+        reader.GetDateTime(6),
+        reader.GetDateTime(7));
 
     private static RecipeIngredient ReadIngredient(NpgsqlDataReader reader) => new(
         reader.GetGuid(0),

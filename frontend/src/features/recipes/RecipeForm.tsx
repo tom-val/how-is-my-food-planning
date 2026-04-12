@@ -7,6 +7,8 @@ import {
   IconButton,
   Paper,
   Autocomplete,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -14,13 +16,17 @@ import { useQuery } from "@tanstack/react-query";
 import type { IngredientInput } from "../../api/recipeApi";
 import { listIngredientNames } from "../../api/recipeApi";
 
+const CATEGORY_OPTIONS = ["breakfast", "lunch", "dinner", "snack"] as const;
+
 interface RecipeFormProps {
   initialName?: string;
   initialInstructions?: string | null;
+  initialCategories?: string[];
   initialIngredients?: IngredientInput[];
   onSubmit: (
     name: string,
     instructions: string | null,
+    categories: string[],
     ingredients: IngredientInput[],
   ) => void;
   isSubmitting: boolean;
@@ -36,6 +42,7 @@ const emptyIngredient = (): IngredientInput => ({
 export function RecipeForm({
   initialName = "",
   initialInstructions = "",
+  initialCategories = [],
   initialIngredients,
   onSubmit,
   isSubmitting,
@@ -44,6 +51,7 @@ export function RecipeForm({
   const { t } = useTranslation();
   const [name, setName] = useState(initialName);
   const [instructions, setInstructions] = useState(initialInstructions ?? "");
+  const [categories, setCategories] = useState<string[]>(initialCategories);
   const [ingredients, setIngredients] = useState<IngredientInput[]>(
     initialIngredients?.length ? initialIngredients : [emptyIngredient()],
   );
@@ -73,7 +81,7 @@ export function RecipeForm({
     e.preventDefault();
     const validIngredients = ingredients.filter((i) => i.name.trim() !== "");
     if (validIngredients.length === 0) return;
-    onSubmit(name, instructions || null, validIngredients);
+    onSubmit(name, instructions || null, categories, validIngredients);
   };
 
   return (
@@ -86,6 +94,26 @@ export function RecipeForm({
         margin="normal"
         required
       />
+
+      <Box sx={{ mt: 1, mb: 1 }}>
+        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+          {t("recipes.categories")}
+        </Typography>
+        <ToggleButtonGroup
+          value={categories}
+          onChange={(_e, val) => setCategories(val)}
+          size="small"
+        >
+          {CATEGORY_OPTIONS.map((cat) => (
+            <ToggleButton key={cat} value={cat}>
+              {t(`planner.${cat}`)}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+          {t("recipes.categoriesHint")}
+        </Typography>
+      </Box>
       <TextField
         fullWidth
         label={t("recipes.instructions")}
