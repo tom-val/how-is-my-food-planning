@@ -74,7 +74,8 @@
     "aiCreate": "Kurti su AI",
     "aiHint": "Aprašykite norima patiekala, pvz. Cepelinai arba lengvi pusryciai",
     "aiPlaceholder": "Aprašykite patiekalą...",
-    "aiUseRecipe": "Naudoti"
+    "aiUseRecipe": "Naudoti",
+    "allCategories": "Visi"
   },
   "planner": {
     "title": "Savaitės planas",

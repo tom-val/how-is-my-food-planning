@@ -1,9 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
   Box,
   TextField,
   IconButton,
@@ -16,16 +13,11 @@ import {
   Chip,
   alpha,
 } from "@mui/material";
-import { Close, Send, AutoAwesome } from "@mui/icons-material";
+import { ArrowBack, Send, AutoAwesome } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { aiSuggestRecipes } from "../../api/recipeApi";
 import type { AiMessage, AiSuggestedRecipe } from "../../api/recipeApi";
-
-interface AiRecipeDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
 
 interface ChatEntry {
   role: "user" | "assistant";
@@ -33,12 +25,17 @@ interface ChatEntry {
   recipes?: AiSuggestedRecipe[];
 }
 
-export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
+export default function AiRecipePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [chat, setChat] = useState<ChatEntry[]>([]);
   const [apiMessages, setApiMessages] = useState<AiMessage[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat]);
 
   const mutation = useMutation({
     mutationFn: (messages: AiMessage[]) => aiSuggestRecipes(messages),
@@ -79,42 +76,48 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
   };
 
   const handlePickRecipe = (recipe: AiSuggestedRecipe) => {
-    onClose();
     navigate("/recipes/new", {
-      state: {
-        aiRecipe: recipe,
-      },
+      state: { aiRecipe: recipe },
     });
   };
 
-  const handleClose = () => {
-    onClose();
-    setChat([]);
-    setApiMessages([]);
-    setInput("");
-  };
-
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="sm"
-      PaperProps={{ sx: { height: "80vh", display: "flex", flexDirection: "column" } }}
+    <Box
+      maxWidth={600}
+      mx="auto"
+      display="flex"
+      flexDirection="column"
+      sx={{ height: "calc(100vh - 130px)" }}
     >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <AutoAwesome color="primary" />
+      {/* Header */}
+      <Box display="flex" alignItems="center" gap={1} mb={2}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate("/recipes")}
+          size="small"
+        >
+          {t("recipes.title")}
+        </Button>
+        <Box flexGrow={1} />
+        <AutoAwesome color="primary" />
+        <Typography variant="h6" fontWeight={600}>
           {t("recipes.aiCreate")}
-        </Box>
-        <IconButton size="small" onClick={handleClose}>
-          <Close />
-        </IconButton>
-      </DialogTitle>
+        </Typography>
+      </Box>
 
-      <DialogContent sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 2, px: 2, pb: 0 }}>
+      {/* Chat area */}
+      <Box
+        sx={{
+          flex: 1,
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          mb: 2,
+        }}
+      >
         {chat.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+          <Box sx={{ textAlign: "center", py: 6, color: "text.secondary" }}>
             <AutoAwesome sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
             <Typography>{t("recipes.aiHint")}</Typography>
           </Box>
@@ -132,7 +135,7 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
                   py: 1,
                   borderRadius: 3,
                   borderBottomRightRadius: 0.5,
-                  maxWidth: "80%",
+                  maxWidth: "85%",
                   ml: "auto",
                 }}
               >
@@ -148,7 +151,7 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
                       py: 1,
                       borderRadius: 3,
                       borderBottomLeftRadius: 0.5,
-                      maxWidth: "80%",
+                      maxWidth: "85%",
                       mb: 1,
                     }}
                   >
@@ -159,7 +162,11 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
                   <Card key={ri} sx={{ mb: 1 }}>
                     <CardActionArea onClick={() => handlePickRecipe(recipe)}>
                       <CardContent sx={{ py: 1.5 }}>
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
                           <Typography variant="h6" fontSize="1rem">
                             {recipe.name}
                           </Typography>
@@ -180,7 +187,12 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
                             ))}
                           </Box>
                         )}
-                        <Typography variant="body2" color="text.secondary" mt={0.5} noWrap>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          mt={0.5}
+                          noWrap
+                        >
                           {recipe.ingredients.map((i) => i.name).join(", ")}
                         </Typography>
                       </CardContent>
@@ -197,10 +209,20 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
             <CircularProgress size={24} />
           </Box>
         )}
-      </DialogContent>
+        <div ref={chatEndRef} />
+      </Box>
 
-      {/* Input bar */}
-      <Box sx={{ p: 2, display: "flex", gap: 1, borderTop: 1, borderColor: "divider" }}>
+      {/* Input bar — fixed at bottom */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          py: 1.5,
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "background.default",
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -224,6 +246,6 @@ export function AiRecipeDialog({ open, onClose }: AiRecipeDialogProps) {
           <Send />
         </IconButton>
       </Box>
-    </Dialog>
+    </Box>
   );
 }

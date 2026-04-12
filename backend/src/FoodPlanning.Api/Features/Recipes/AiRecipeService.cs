@@ -95,7 +95,7 @@ public class AiRecipeService : IAiRecipeService
             model = "gpt-5.4",
             messages = chatMessages,
             temperature = 0.7,
-            max_tokens = 50000,
+            max_completion_tokens = 50000,
             response_format = new { type = "json_object" },
         };
 

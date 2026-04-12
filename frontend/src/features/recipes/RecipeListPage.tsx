@@ -4,6 +4,7 @@ import {
   Typography,
   Box,
   Button,
+  IconButton,
   Card,
   CardContent,
   CardActionArea,
@@ -16,23 +17,35 @@ import {
   DialogActions,
 } from "@mui/material";
 import { Add, AutoAwesome } from "@mui/icons-material";
-import { AiRecipeDialog } from "./AiRecipeDialog";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listRecipes, deleteRecipe } from "../../api/recipeApi";
 import type { RecipeWithIngredients } from "../../api/recipeApi";
+import { useMemo } from "react";
+
+const CATEGORIES = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 export default function RecipeListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
-  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ["recipes"],
     queryFn: listRecipes,
   });
+
+  const filteredRecipes = useMemo(() => {
+    if (!recipes) return [];
+    if (!activeFilter) return recipes;
+    return recipes.filter(
+      ({ recipe }) =>
+        recipe.categories.length === 0 ||
+        recipe.categories.includes(activeFilter),
+    );
+  }, [recipes, activeFilter]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRecipe(id),
@@ -55,24 +68,47 @@ export default function RecipeListPage() {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{t("recipes.title")}</Typography>
         <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<AutoAwesome />}
-            onClick={() => setIsAiDialogOpen(true)}
+          <IconButton
+            color="primary"
+            onClick={() => navigate("/recipes/ai")}
+            title={t("recipes.aiCreate")}
+            sx={{ border: 1, borderColor: "primary.main" }}
           >
-            {t("recipes.aiCreate")}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
+            <AutoAwesome />
+          </IconButton>
+          <IconButton
+            color="primary"
             onClick={() => navigate("/recipes/new")}
+            title={t("recipes.create")}
+            sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" } }}
           >
-            {t("recipes.create")}
-          </Button>
+            <Add />
+          </IconButton>
         </Box>
       </Box>
 
-      {!recipes?.length ? (
+      {/* Category filter */}
+      <Box display="flex" gap={0.5} mb={2} flexWrap="wrap">
+        <Chip
+          label={t("recipes.allCategories")}
+          size="small"
+          color={activeFilter === null ? "primary" : "default"}
+          variant={activeFilter === null ? "filled" : "outlined"}
+          onClick={() => setActiveFilter(null)}
+        />
+        {CATEGORIES.map((cat) => (
+          <Chip
+            key={cat}
+            label={t(`planner.${cat}`)}
+            size="small"
+            color={activeFilter === cat ? "primary" : "default"}
+            variant={activeFilter === cat ? "filled" : "outlined"}
+            onClick={() => setActiveFilter(activeFilter === cat ? null : cat)}
+          />
+        ))}
+      </Box>
+
+      {!filteredRecipes?.length ? (
         <Box sx={{ textAlign: "center", py: 6 }}>
           <Typography color="text.secondary" variant="body1">
             {t("recipes.empty")}
@@ -80,7 +116,7 @@ export default function RecipeListPage() {
         </Box>
       ) : (
         <Box display="flex" flexDirection="column" gap={1.5}>
-          {recipes.map(({ recipe, ingredients }) => (
+          {filteredRecipes.map(({ recipe, ingredients }) => (
             <Card key={recipe.id}>
               <CardActionArea
                 onClick={() => navigate(`/recipes/${recipe.id}`)}
@@ -138,7 +174,6 @@ export default function RecipeListPage() {
         </DialogActions>
       </Dialog>
 
-      <AiRecipeDialog open={isAiDialogOpen} onClose={() => setIsAiDialogOpen(false)} />
     </Box>
   );
 }
