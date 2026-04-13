@@ -145,13 +145,24 @@ body {
   }
 
   /* Shopping list: 2-column grid for items */
-  .MuiList-root {
-    columns: 2 !important;
-    column-gap: 8px !important;
+  .shopping-list-items {
+    column-count: 2 !important;
+    column-gap: 16px !important;
+    column-rule: 1px solid #ddd !important;
   }
 
-  .MuiList-root > * {
-    break-inside: avoid;
+  .shopping-list-items > * {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    display: block !important;
+  }
+
+  .shopping-list-items .MuiDivider-root {
+    display: none !important;
+  }
+
+  .shopping-list-card {
+    break-inside: auto !important;
   }
 
   /* Tighter flex gap */

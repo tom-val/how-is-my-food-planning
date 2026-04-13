@@ -223,8 +223,8 @@ export default function ShoppingListPage() {
           <Typography color="text.secondary">{t("shopping.empty")}</Typography>
         </Box>
       ) : (
-        <Card>
-          <List disablePadding>
+        <Card className="shopping-list-card">
+          <List disablePadding className="shopping-list-items">
             {items.map((item, index) => {
               const recipes = getRecipesForIngredient(item.ingredientName, item.unit);
               return (
