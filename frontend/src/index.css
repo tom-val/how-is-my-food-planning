@@ -144,16 +144,31 @@ body {
     flex-direction: unset !important;
   }
 
-  /* Shopping list: 2-column grid for items */
+  /* Shopping list: 2-column layout for items */
+  .shopping-list-card {
+    border: none !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
   .shopping-list-items {
+    -webkit-column-count: 2 !important;
+    -moz-column-count: 2 !important;
     column-count: 2 !important;
+    -webkit-column-gap: 16px !important;
+    -moz-column-gap: 16px !important;
     column-gap: 16px !important;
+    -webkit-column-rule: 1px solid #ddd !important;
+    -moz-column-rule: 1px solid #ddd !important;
     column-rule: 1px solid #ddd !important;
+    display: block !important;
+    padding: 0 !important;
   }
 
   .shopping-list-items > * {
-    break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
     display: block !important;
   }
 
@@ -161,8 +176,9 @@ body {
     display: none !important;
   }
 
-  .shopping-list-card {
-    break-inside: auto !important;
+  /* Hide recipe chips rendered inside ListItemText secondary */
+  .shopping-list-items .MuiListItemText-secondary {
+    display: none !important;
   }
 
   /* Tighter flex gap */
