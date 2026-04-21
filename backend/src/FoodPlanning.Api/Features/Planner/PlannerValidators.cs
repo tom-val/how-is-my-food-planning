@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace FoodPlanning.Api.Features.Planner;
 
-public record AddMealRequest(int DayOfWeek, string MealType, Guid RecipeId);
+public record AddMealRequest(int DayOfWeek, string MealType, Guid RecipeId, bool IsShadow = false);
 
-public record ScheduleMealRequest(string Date, string MealType, Guid RecipeId);
+public record ScheduleMealRequest(string Date, string MealType, Guid RecipeId, bool IsShadow = false);
 
 public class AddMealValidator : AbstractValidator<AddMealRequest>
 {

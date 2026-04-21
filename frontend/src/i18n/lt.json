@@ -76,7 +76,8 @@
     "aiPlaceholder": "Patiekalas arba nuoroda...",
     "aiUseRecipe": "Naudoti",
     "allCategories": "Visi",
-    "fromImage": "Is nuotraukos"
+    "fromImage": "Is nuotraukos",
+    "searchPlaceholder": "Ieskoti recepto ar ingrediento..."
   },
   "planner": {
     "title": "Savaitės planas",
@@ -94,7 +95,9 @@
     "random30Days": "Atsitiktinai per 30 dienų",
     "random6Months": "Atsitiktinai per 6 mėnesius",
     "unassigned": "Nepriskirta",
-    "randomRecipe": "Atsitiktinis receptas"
+    "randomRecipe": "Atsitiktinis receptas",
+    "shadowCopy": "Kartojamas patiekalas (be ingredientu)",
+    "repeated": "kartojamas"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",

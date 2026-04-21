@@ -76,7 +76,8 @@
     "aiPlaceholder": "Dish name or recipe URL...",
     "aiUseRecipe": "Use this",
     "allCategories": "All",
-    "fromImage": "From image"
+    "fromImage": "From image",
+    "searchPlaceholder": "Search recipes or ingredients..."
   },
   "planner": {
     "title": "Weekly Plan",
@@ -94,7 +95,9 @@
     "random30Days": "Random day within 30 days",
     "random6Months": "Random day within 6 months",
     "unassigned": "Unassigned",
-    "randomRecipe": "Random recipe"
+    "randomRecipe": "Random recipe",
+    "shadowCopy": "Repeat dish (skip ingredients)",
+    "repeated": "repeated"
   },
   "shopping": {
     "title": "Shopping List",

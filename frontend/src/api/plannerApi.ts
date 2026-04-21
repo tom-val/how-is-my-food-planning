@@ -7,6 +7,7 @@ export interface PlannedMeal {
   mealType: string;
   recipeId: string;
   recipeName: string;
+  isShadow: boolean;
 }
 
 export interface WeeklyPlan {
@@ -38,10 +39,11 @@ export async function addMeal(
   dayOfWeek: number,
   mealType: string,
   recipeId: string,
+  isShadow: boolean = false,
 ): Promise<PlannedMeal> {
   const { data } = await apiClient.post<PlannedMeal>(
     `/v1/plans/${planId}/meals`,
-    { dayOfWeek, mealType, recipeId },
+    { dayOfWeek, mealType, recipeId, isShadow },
   );
   return data;
 }
@@ -57,11 +59,13 @@ export async function scheduleMeal(
   date: string,
   mealType: string,
   recipeId: string,
+  isShadow: boolean = false,
 ): Promise<PlannedMeal> {
   const { data } = await apiClient.post<PlannedMeal>("/v1/plans/schedule", {
     date,
     mealType,
     recipeId,
+    isShadow,
   });
   return data;
 }

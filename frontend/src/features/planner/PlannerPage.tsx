@@ -21,6 +21,8 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import {
   ChevronLeft,
@@ -79,6 +81,7 @@ export default function PlannerPage() {
     mealType: string;
   } | null>(null);
   const [recipeSearch, setRecipeSearch] = useState("");
+  const [isShadowMode, setIsShadowMode] = useState(false);
 
   // Assign menu state.
   const [assignAnchorEl, setAssignAnchorEl] = useState<HTMLElement | null>(null);
@@ -149,11 +152,13 @@ export default function PlannerPage() {
         addDialog!.dayOfWeek,
         addDialog!.mealType,
         recipeId,
+        isShadowMode,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
       setAddDialog(null);
       setRecipeSearch("");
+      setIsShadowMode(false);
     },
   });
 
@@ -169,11 +174,13 @@ export default function PlannerPage() {
       date,
       mealType,
       recipeId,
+      isShadow,
     }: {
       date: string;
       mealType: string;
       recipeId: string;
-    }) => scheduleMeal(date, mealType, recipeId),
+      isShadow: boolean;
+    }) => scheduleMeal(date, mealType, recipeId, isShadow),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plan"] });
       setScheduleMenu(null);
@@ -233,6 +240,7 @@ export default function PlannerPage() {
       date,
       mealType: scheduleMenu.meal.mealType,
       recipeId: scheduleMenu.meal.recipeId,
+      isShadow: scheduleMenu.meal.isShadow,
     });
   };
 
@@ -359,11 +367,15 @@ export default function PlannerPage() {
                       {meals.map((meal) => (
                         <Chip
                           key={meal.id}
-                          label={meal.recipeName}
+                          label={
+                            meal.isShadow
+                              ? `${meal.recipeName} · ${t("planner.repeated")}`
+                              : meal.recipeName
+                          }
                           onClick={() => handleChipClick(meal)}
                           onDelete={() => removeMutation.mutate(meal.id)}
                           size={isMobile ? "small" : "medium"}
-                          color="primary"
+                          color={meal.isShadow ? "default" : "primary"}
                           variant="outlined"
                           onMouseDown={(e) =>
                             handleLongPressStart(e, meal, dayIndex)
@@ -374,7 +386,10 @@ export default function PlannerPage() {
                             handleLongPressStart(e, meal, dayIndex)
                           }
                           onTouchEnd={handleLongPressEnd}
-                          sx={{ cursor: "pointer" }}
+                          sx={{
+                            cursor: "pointer",
+                            fontStyle: meal.isShadow ? "italic" : "normal",
+                          }}
                         />
                       ))}
                       <IconButton
@@ -430,6 +445,7 @@ export default function PlannerPage() {
         onClose={() => {
           setAddDialog(null);
           setRecipeSearch("");
+          setIsShadowMode(false);
         }}
         fullWidth
         maxWidth="xs"
@@ -447,6 +463,7 @@ export default function PlannerPage() {
             onClick={() => {
               setAddDialog(null);
               setRecipeSearch("");
+              setIsShadowMode(false);
             }}
           >
             <Close />
@@ -460,6 +477,21 @@ export default function PlannerPage() {
             onChange={(e) => setRecipeSearch(e.target.value)}
             size="small"
             autoFocus
+            sx={{ mb: 1 }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isShadowMode}
+                onChange={(e) => setIsShadowMode(e.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2" color="text.secondary">
+                {t("planner.shadowCopy")}
+              </Typography>
+            }
             sx={{ mb: 1 }}
           />
           {!filteredRecipes.length ? (

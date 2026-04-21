@@ -190,7 +190,7 @@ public class ShoppingRepository : IShoppingRepository
             FROM planned_meals pm
             JOIN recipe_ingredients ri ON ri.recipe_id = pm.recipe_id
             JOIN recipes r ON r.id = pm.recipe_id
-            WHERE pm.weekly_plan_id = @planId
+            WHERE pm.weekly_plan_id = @planId AND pm.is_shadow = false
             ORDER BY ri.name, r.name
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
@@ -216,7 +216,7 @@ public class ShoppingRepository : IShoppingRepository
             SELECT ri.name, SUM(ri.quantity), ri.unit
             FROM planned_meals pm
             JOIN recipe_ingredients ri ON ri.recipe_id = pm.recipe_id
-            WHERE pm.weekly_plan_id = @planId
+            WHERE pm.weekly_plan_id = @planId AND pm.is_shadow = false
             GROUP BY ri.name, ri.unit
             ORDER BY ri.name
             """, conn, tx);

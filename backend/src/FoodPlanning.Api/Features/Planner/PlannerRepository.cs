@@ -18,17 +18,18 @@ public record PlannedMeal(
     int DayOfWeek,
     string MealType,
     Guid RecipeId,
-    string RecipeName);
+    string RecipeName,
+    bool IsShadow);
 
 public record WeeklyPlanWithMeals(WeeklyPlan Plan, List<PlannedMeal> Meals);
 
 public interface IPlannerRepository
 {
     Task<WeeklyPlanWithMeals> GetOrCreateAsync(Guid familyId, DateOnly weekStart, string userId);
-    Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId);
+    Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow);
     Task<bool> RemoveMealAsync(Guid planId, Guid mealId);
     Task<Guid?> GetPlanFamilyIdAsync(Guid planId);
-    Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId);
+    Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow);
     Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName);
 }
 
@@ -88,28 +89,29 @@ public class PlannerRepository : IPlannerRepository
         return new WeeklyPlanWithMeals(plan, meals);
     }
 
-    public async Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId)
+    public async Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
             """
-            INSERT INTO planned_meals (weekly_plan_id, day_of_week, meal_type, recipe_id)
-            VALUES (@planId, @dayOfWeek, @mealType, @recipeId)
+            INSERT INTO planned_meals (weekly_plan_id, day_of_week, meal_type, recipe_id, is_shadow)
+            VALUES (@planId, @dayOfWeek, @mealType, @recipeId, @isShadow)
             RETURNING id
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
         cmd.Parameters.AddWithValue("dayOfWeek", (short)dayOfWeek);
         cmd.Parameters.AddWithValue("mealType", mealType);
         cmd.Parameters.AddWithValue("recipeId", recipeId);
+        cmd.Parameters.AddWithValue("isShadow", isShadow);
 
         var mealId = (Guid)(await cmd.ExecuteScalarAsync())!;
 
         // Fetch with recipe name.
         await using var fetchCmd = new NpgsqlCommand(
             """
-            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name
+            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name, pm.is_shadow
             FROM planned_meals pm
             JOIN recipes r ON r.id = pm.recipe_id
             WHERE pm.id = @mealId
@@ -151,7 +153,7 @@ public class PlannerRepository : IPlannerRepository
     }
 
     public async Task<PlannedMeal> ScheduleMealAsync(
-        Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId)
+        Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow)
     {
         // Calculate the Monday of the target week and the day index (0=Mon).
         var dayOfWeekIndex = ((int)date.DayOfWeek + 6) % 7; // Convert Sun=0 to Mon=0
@@ -161,7 +163,7 @@ public class PlannerRepository : IPlannerRepository
         var planWithMeals = await GetOrCreateAsync(familyId, monday, userId);
 
         // Add the meal.
-        return await AddMealAsync(planWithMeals.Plan.Id, dayOfWeekIndex, mealType, recipeId);
+        return await AddMealAsync(planWithMeals.Plan.Id, dayOfWeekIndex, mealType, recipeId, isShadow);
     }
 
     public async Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName)
@@ -191,7 +193,7 @@ public class PlannerRepository : IPlannerRepository
     {
         await using var cmd = new NpgsqlCommand(
             """
-            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name
+            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name, pm.is_shadow
             FROM planned_meals pm
             JOIN recipes r ON r.id = pm.recipe_id
             WHERE pm.weekly_plan_id = @planId
@@ -222,5 +224,6 @@ public class PlannerRepository : IPlannerRepository
         reader.GetInt16(2),
         reader.GetString(3),
         reader.GetGuid(4),
-        reader.GetString(5));
+        reader.GetString(5),
+        reader.GetBoolean(6));
 }

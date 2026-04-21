@@ -15,7 +15,10 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__chrome-devtools__take_snapshot",
       "Bash(npm run:*)",
-      "WebFetch(domain:developers.openai.com)"
+      "WebFetch(domain:developers.openai.com)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/local/share/dotnet:$PATH\")",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }

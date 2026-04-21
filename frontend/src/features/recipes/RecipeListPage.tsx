@@ -15,10 +15,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  TextField,
+  InputAdornment,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Add, AutoAwesome, CameraAlt } from "@mui/icons-material";
+import { Add, AutoAwesome, CameraAlt, Search } from "@mui/icons-material";
 import { aiStartImageJob, aiPollJob } from "../../api/recipeApi";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,6 +38,7 @@ export default function RecipeListPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,13 +88,23 @@ export default function RecipeListPage() {
 
   const filteredRecipes = useMemo(() => {
     if (!recipes) return [];
-    if (!activeFilter) return recipes;
-    return recipes.filter(
-      ({ recipe }) =>
-        recipe.categories.length === 0 ||
-        recipe.categories.includes(activeFilter),
-    );
-  }, [recipes, activeFilter]);
+    let result = recipes;
+    if (activeFilter) {
+      result = result.filter(
+        ({ recipe }) =>
+          recipe.categories.length === 0 ||
+          recipe.categories.includes(activeFilter),
+      );
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(({ recipe, ingredients }) =>
+        recipe.name.toLowerCase().includes(q) ||
+        ingredients.some((i) => i.name.toLowerCase().includes(q)),
+      );
+    }
+    return result;
+  }, [recipes, activeFilter, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRecipe(id),
@@ -177,6 +190,23 @@ export default function RecipeListPage() {
           )}
         </Box>
       </Box>
+
+      {/* Search */}
+      <TextField
+        fullWidth
+        size="small"
+        placeholder={t("recipes.searchPlaceholder")}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search fontSize="small" />
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mb: 2 }}
+      />
 
       {/* Category filter */}
       <Box display="flex" gap={0.5} mb={2} flexWrap="wrap">

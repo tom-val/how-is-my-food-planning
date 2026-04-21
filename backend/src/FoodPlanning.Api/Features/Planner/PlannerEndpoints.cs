@@ -56,7 +56,7 @@ public static class PlannerEndpoints
         if (planFamilyId is null || planFamilyId != member.FamilyId)
             return Results.NotFound(new { error = "Plan not found." });
 
-        var meal = await repository.AddMealAsync(id, request.DayOfWeek, request.MealType, request.RecipeId);
+        var meal = await repository.AddMealAsync(id, request.DayOfWeek, request.MealType, request.RecipeId, request.IsShadow);
         return Results.Created($"/v1/plans/{id}/meals/{meal.Id}", meal);
     }
 
@@ -96,7 +96,7 @@ public static class PlannerEndpoints
         var date = DateOnly.Parse(request.Date);
 
         var meal = await repository.ScheduleMealAsync(
-            member.FamilyId, userId, date, request.MealType, request.RecipeId);
+            member.FamilyId, userId, date, request.MealType, request.RecipeId, request.IsShadow);
 
         return Results.Created($"/v1/plans/{meal.WeeklyPlanId}/meals/{meal.Id}", meal);
     }
