@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Typography,
@@ -75,7 +75,20 @@ export default function PlannerPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(() => {
+    // Restore last viewed week from localStorage.
+    try {
+      const saved = localStorage.getItem("planner.lastWeekStart");
+      if (!saved) return 0;
+      const savedDate = new Date(saved);
+      const todayMonday = new Date(getMonday(new Date()));
+      const diffMs = savedDate.getTime() - todayMonday.getTime();
+      const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+      return diffWeeks;
+    } catch {
+      return 0;
+    }
+  });
   const [addDialog, setAddDialog] = useState<{
     dayOfWeek: number;
     mealType: string;
@@ -99,6 +112,15 @@ export default function PlannerPage() {
     today.setDate(today.getDate() + weekOffset * 7);
     return getMonday(today);
   }, [weekOffset]);
+
+  // Persist last viewed week.
+  useEffect(() => {
+    try {
+      localStorage.setItem("planner.lastWeekStart", weekStart);
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [weekStart]);
 
   const { data: planData, isLoading: isPlanLoading } = useQuery({
     queryKey: ["plan", weekStart],
