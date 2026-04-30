@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Typography,
   Box,
@@ -35,7 +35,20 @@ import { getPlan, getMonday } from "../../api/plannerApi";
 export default function ShoppingListPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(() => {
+    // Restore last viewed week from localStorage.
+    try {
+      const saved = localStorage.getItem("shopping.lastWeekStart");
+      if (!saved) return 0;
+      const savedDate = new Date(saved);
+      const todayMonday = new Date(getMonday(new Date()));
+      const diffMs = savedDate.getTime() - todayMonday.getTime();
+      const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+      return diffWeeks;
+    } catch {
+      return 0;
+    }
+  });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemQuantity, setCustomItemQuantity] = useState("");
@@ -47,6 +60,15 @@ export default function ShoppingListPage() {
     today.setDate(today.getDate() + weekOffset * 7);
     return getMonday(today);
   }, [weekOffset]);
+
+  // Persist last viewed week.
+  useEffect(() => {
+    try {
+      localStorage.setItem("shopping.lastWeekStart", weekStart);
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [weekStart]);
 
   const weekLabel = useMemo(() => {
     const start = new Date(weekStart);
