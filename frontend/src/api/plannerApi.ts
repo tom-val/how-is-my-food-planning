@@ -5,9 +5,10 @@ export interface PlannedMeal {
   weeklyPlanId: string;
   dayOfWeek: number;
   mealType: string;
-  recipeId: string;
+  recipeId: string | null;
   recipeName: string;
   isShadow: boolean;
+  isCustom: boolean;
 }
 
 export interface WeeklyPlan {
@@ -44,6 +45,19 @@ export async function addMeal(
   const { data } = await apiClient.post<PlannedMeal>(
     `/v1/plans/${planId}/meals`,
     { dayOfWeek, mealType, recipeId, isShadow },
+  );
+  return data;
+}
+
+export async function addCustomMeal(
+  planId: string,
+  dayOfWeek: number,
+  mealType: string,
+  customName: string,
+): Promise<PlannedMeal> {
+  const { data } = await apiClient.post<PlannedMeal>(
+    `/v1/plans/${planId}/custom-meals`,
+    { dayOfWeek, mealType, customName },
   );
   return data;
 }

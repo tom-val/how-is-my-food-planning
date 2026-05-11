@@ -12,6 +12,7 @@ public static class PlannerEndpoints
 
         group.MapGet("/", GetPlan);
         group.MapPost("/{id:guid}/meals", AddMeal);
+        group.MapPost("/{id:guid}/custom-meals", AddCustomMeal);
         group.MapDelete("/{id:guid}/meals/{mealId:guid}", RemoveMeal);
         group.MapPost("/schedule", ScheduleMeal);
         group.MapPatch("/{id:guid}/assign", AssignPlan);
@@ -57,6 +58,29 @@ public static class PlannerEndpoints
             return Results.NotFound(new { error = "Plan not found." });
 
         var meal = await repository.AddMealAsync(id, request.DayOfWeek, request.MealType, request.RecipeId, request.IsShadow);
+        return Results.Created($"/v1/plans/{id}/meals/{meal.Id}", meal);
+    }
+
+    private static async Task<IResult> AddCustomMeal(
+        Guid id,
+        AddCustomMealRequest request,
+        IValidator<AddCustomMealRequest> validator,
+        IPlannerRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var validation = await validator.ValidateAsync(request);
+        if (!validation.IsValid)
+            return Results.ValidationProblem(validation.ToDictionary());
+
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        var planFamilyId = await repository.GetPlanFamilyIdAsync(id);
+        if (planFamilyId is null || planFamilyId != member.FamilyId)
+            return Results.NotFound(new { error = "Plan not found." });
+
+        var meal = await repository.AddCustomMealAsync(id, request.DayOfWeek, request.MealType, request.CustomName.Trim());
         return Results.Created($"/v1/plans/{id}/meals/{meal.Id}", meal);
     }
 

@@ -97,7 +97,9 @@
     "unassigned": "Unassigned",
     "randomRecipe": "Random recipe",
     "shadowCopy": "Repeat dish (skip ingredients)",
-    "repeated": "repeated"
+    "repeated": "repeated",
+    "customMeal": "Or type a custom meal",
+    "customMealPlaceholder": "e.g. eating out, mum's lasagna"
   },
   "shopping": {
     "title": "Shopping List",

@@ -97,7 +97,9 @@
     "unassigned": "Nepriskirta",
     "randomRecipe": "Atsitiktinis receptas",
     "shadowCopy": "Kartojamas patiekalas (be ingredientu)",
-    "repeated": "kartojamas"
+    "repeated": "kartojamas",
+    "customMeal": "Arba ivesti patiekala",
+    "customMealPlaceholder": "Pvz. picerijoje, mocia"
   },
   "shopping": {
     "title": "Pirkinių sąrašas",

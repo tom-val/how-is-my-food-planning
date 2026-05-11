@@ -17,9 +17,10 @@ public record PlannedMeal(
     Guid WeeklyPlanId,
     int DayOfWeek,
     string MealType,
-    Guid RecipeId,
+    Guid? RecipeId,
     string RecipeName,
-    bool IsShadow);
+    bool IsShadow,
+    bool IsCustom);
 
 public record WeeklyPlanWithMeals(WeeklyPlan Plan, List<PlannedMeal> Meals);
 
@@ -27,6 +28,7 @@ public interface IPlannerRepository
 {
     Task<WeeklyPlanWithMeals> GetOrCreateAsync(Guid familyId, DateOnly weekStart, string userId);
     Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow);
+    Task<PlannedMeal> AddCustomMealAsync(Guid planId, int dayOfWeek, string mealType, string customName);
     Task<bool> RemoveMealAsync(Guid planId, Guid mealId);
     Task<Guid?> GetPlanFamilyIdAsync(Guid planId);
     Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow);
@@ -111,9 +113,11 @@ public class PlannerRepository : IPlannerRepository
         // Fetch with recipe name.
         await using var fetchCmd = new NpgsqlCommand(
             """
-            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name, pm.is_shadow
+            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id,
+                   COALESCE(r.name, pm.custom_name) AS display_name, pm.is_shadow,
+                   (pm.custom_name IS NOT NULL) AS is_custom
             FROM planned_meals pm
-            JOIN recipes r ON r.id = pm.recipe_id
+            LEFT JOIN recipes r ON r.id = pm.recipe_id
             WHERE pm.id = @mealId
             """, conn);
         fetchCmd.Parameters.AddWithValue("mealId", mealId);
@@ -121,6 +125,31 @@ public class PlannerRepository : IPlannerRepository
         await using var reader = await fetchCmd.ExecuteReaderAsync();
         if (!await reader.ReadAsync())
             throw new InvalidOperationException("Failed to fetch created meal.");
+
+        return ReadMeal(reader);
+    }
+
+    public async Task<PlannedMeal> AddCustomMealAsync(Guid planId, int dayOfWeek, string mealType, string customName)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO planned_meals (weekly_plan_id, day_of_week, meal_type, custom_name)
+            VALUES (@planId, @dayOfWeek, @mealType, @customName)
+            RETURNING id, weekly_plan_id, day_of_week, meal_type, recipe_id,
+                      COALESCE(custom_name, '') AS display_name, is_shadow,
+                      (custom_name IS NOT NULL) AS is_custom
+            """, conn);
+        cmd.Parameters.AddWithValue("planId", planId);
+        cmd.Parameters.AddWithValue("dayOfWeek", (short)dayOfWeek);
+        cmd.Parameters.AddWithValue("mealType", mealType);
+        cmd.Parameters.AddWithValue("customName", customName);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+            throw new InvalidOperationException("Failed to create custom meal.");
 
         return ReadMeal(reader);
     }
@@ -193,11 +222,13 @@ public class PlannerRepository : IPlannerRepository
     {
         await using var cmd = new NpgsqlCommand(
             """
-            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id, r.name, pm.is_shadow
+            SELECT pm.id, pm.weekly_plan_id, pm.day_of_week, pm.meal_type, pm.recipe_id,
+                   COALESCE(r.name, pm.custom_name) AS display_name, pm.is_shadow,
+                   (pm.custom_name IS NOT NULL) AS is_custom
             FROM planned_meals pm
-            JOIN recipes r ON r.id = pm.recipe_id
+            LEFT JOIN recipes r ON r.id = pm.recipe_id
             WHERE pm.weekly_plan_id = @planId
-            ORDER BY pm.day_of_week, pm.meal_type, r.name
+            ORDER BY pm.day_of_week, pm.meal_type, COALESCE(r.name, pm.custom_name)
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
 
@@ -223,7 +254,8 @@ public class PlannerRepository : IPlannerRepository
         reader.GetGuid(1),
         reader.GetInt16(2),
         reader.GetString(3),
-        reader.GetGuid(4),
+        reader.IsDBNull(4) ? null : reader.GetGuid(4),
         reader.GetString(5),
-        reader.GetBoolean(6));
+        reader.GetBoolean(6),
+        reader.GetBoolean(7));
 }

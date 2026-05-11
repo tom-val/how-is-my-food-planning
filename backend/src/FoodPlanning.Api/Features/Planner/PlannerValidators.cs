@@ -6,6 +6,21 @@ public record AddMealRequest(int DayOfWeek, string MealType, Guid RecipeId, bool
 
 public record ScheduleMealRequest(string Date, string MealType, Guid RecipeId, bool IsShadow = false);
 
+public record AddCustomMealRequest(int DayOfWeek, string MealType, string CustomName);
+
+public class AddCustomMealValidator : AbstractValidator<AddCustomMealRequest>
+{
+    private static readonly string[] ValidMealTypes = ["breakfast", "lunch", "dinner", "snack"];
+
+    public AddCustomMealValidator()
+    {
+        RuleFor(x => x.DayOfWeek).InclusiveBetween(0, 6);
+        RuleFor(x => x.MealType).Must(t => ValidMealTypes.Contains(t))
+            .WithMessage($"Meal type must be one of: {string.Join(", ", ValidMealTypes)}.");
+        RuleFor(x => x.CustomName).NotEmpty().MaximumLength(200);
+    }
+}
+
 public class AddMealValidator : AbstractValidator<AddMealRequest>
 {
     private static readonly string[] ValidMealTypes = ["breakfast", "lunch", "dinner", "snack"];

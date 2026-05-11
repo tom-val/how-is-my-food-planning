@@ -42,6 +42,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getPlan,
   addMeal,
+  addCustomMeal,
   removeMeal,
   scheduleMeal,
   assignPlan,
@@ -95,6 +96,7 @@ export default function PlannerPage() {
   } | null>(null);
   const [recipeSearch, setRecipeSearch] = useState("");
   const [isShadowMode, setIsShadowMode] = useState(false);
+  const [customMealName, setCustomMealName] = useState("");
 
   // Assign menu state.
   const [assignAnchorEl, setAssignAnchorEl] = useState<HTMLElement | null>(null);
@@ -181,6 +183,24 @@ export default function PlannerPage() {
       setAddDialog(null);
       setRecipeSearch("");
       setIsShadowMode(false);
+      setCustomMealName("");
+    },
+  });
+
+  const customMealMutation = useMutation({
+    mutationFn: (name: string) =>
+      addCustomMeal(
+        planData!.plan.id,
+        addDialog!.dayOfWeek,
+        addDialog!.mealType,
+        name,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
+      setAddDialog(null);
+      setRecipeSearch("");
+      setIsShadowMode(false);
+      setCustomMealName("");
     },
   });
 
@@ -231,6 +251,8 @@ export default function PlannerPage() {
   const handleLongPressStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent, meal: PlannedMeal, dayOfWeek: number) => {
       longPressTriggered.current = false;
+      // Custom meals can't be scheduled (no recipe to repeat).
+      if (meal.isCustom) return;
       const target = e.currentTarget as HTMLElement;
       longPressTimer.current = setTimeout(() => {
         longPressTriggered.current = true;
@@ -249,7 +271,7 @@ export default function PlannerPage() {
 
   const handleChipClick = useCallback(
     (meal: PlannedMeal) => {
-      if (!longPressTriggered.current) {
+      if (!longPressTriggered.current && meal.recipeId) {
         navigate(`/recipes/${meal.recipeId}`);
       }
     },
@@ -257,7 +279,7 @@ export default function PlannerPage() {
   );
 
   const handleSchedule = (date: string) => {
-    if (!scheduleMenu) return;
+    if (!scheduleMenu || !scheduleMenu.meal.recipeId) return;
     scheduleMutation.mutate({
       date,
       mealType: scheduleMenu.meal.mealType,
@@ -397,7 +419,9 @@ export default function PlannerPage() {
                           onClick={() => handleChipClick(meal)}
                           onDelete={() => removeMutation.mutate(meal.id)}
                           size={isMobile ? "small" : "medium"}
-                          color={meal.isShadow ? "default" : "primary"}
+                          color={
+                            meal.isShadow || meal.isCustom ? "default" : "primary"
+                          }
                           variant="outlined"
                           onMouseDown={(e) =>
                             handleLongPressStart(e, meal, dayIndex)
@@ -409,8 +433,9 @@ export default function PlannerPage() {
                           }
                           onTouchEnd={handleLongPressEnd}
                           sx={{
-                            cursor: "pointer",
+                            cursor: meal.isCustom ? "default" : "pointer",
                             fontStyle: meal.isShadow ? "italic" : "normal",
+                            borderStyle: meal.isCustom ? "dashed" : "solid",
                           }}
                         />
                       ))}
@@ -468,6 +493,7 @@ export default function PlannerPage() {
           setAddDialog(null);
           setRecipeSearch("");
           setIsShadowMode(false);
+          setCustomMealName("");
         }}
         fullWidth
         maxWidth="xs"
@@ -486,6 +512,7 @@ export default function PlannerPage() {
               setAddDialog(null);
               setRecipeSearch("");
               setIsShadowMode(false);
+              setCustomMealName("");
             }}
           >
             <Close />
@@ -533,6 +560,36 @@ export default function PlannerPage() {
               ))}
             </List>
           )}
+
+          {/* Custom meal input */}
+          <Box sx={{ pt: 2, mt: 1, borderTop: 1, borderColor: "divider" }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              {t("planner.customMeal")}
+            </Typography>
+            <Box display="flex" gap={1}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder={t("planner.customMealPlaceholder")}
+                value={customMealName}
+                onChange={(e) => setCustomMealName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customMealName.trim()) {
+                    e.preventDefault();
+                    customMealMutation.mutate(customMealName.trim());
+                  }
+                }}
+                disabled={customMealMutation.isPending}
+              />
+              <IconButton
+                color="primary"
+                onClick={() => customMealMutation.mutate(customMealName.trim())}
+                disabled={!customMealName.trim() || customMealMutation.isPending}
+              >
+                <Add />
+              </IconButton>
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
 
