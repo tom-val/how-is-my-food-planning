@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import { CircularProgress, Box } from "@mui/material";
+import { Spinner } from "./components/sage/Spinner";
 import { AppLayout } from "./components/layout/AppLayout";
 import { RequireAuth } from "./components/shared/RequireAuth";
 
@@ -19,21 +19,8 @@ const ShoppingListPage = lazy(
 const FamilyPage = lazy(() => import("./features/family/FamilyPage"));
 const JoinByLinkPage = lazy(() => import("./features/family/JoinByLinkPage"));
 
-function PageSpinner() {
-  return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="50vh"
-    >
-      <CircularProgress />
-    </Box>
-  );
-}
-
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageSpinner />}>{children}</Suspense>;
+  return <Suspense fallback={<Spinner />}>{children}</Suspense>;
 }
 
 export const router = createBrowserRouter([

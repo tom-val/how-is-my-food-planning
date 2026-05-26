@@ -1,43 +1,55 @@
-import { IconButton, Menu, MenuItem } from "@mui/material";
-import { Language } from "@mui/icons-material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "../sage/Icon";
+import { Popover } from "../sage/Popover";
 
-const languages = [
-  { code: "lt", label: "Lietuvių" },
-  { code: "en", label: "English" },
+const LANGUAGES = [
+  { code: "lt", flag: "🇱🇹", native: "Lietuvių", en: "Lithuanian" },
+  { code: "en", flag: "🇬🇧", native: "English", en: "English" },
 ];
 
 export function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { t, i18n } = useTranslation();
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   return (
     <>
-      <IconButton
-        color="inherit"
-        onClick={(e) => setAnchorEl(e.currentTarget)}
+      <button
+        type="button"
+        className="fp-icon-btn"
+        onClick={(e) => setAnchor(e.currentTarget)}
+        aria-label="Language"
       >
-        <Language />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={!!anchorEl}
-        onClose={() => setAnchorEl(null)}
-      >
-        {languages.map((lang) => (
-          <MenuItem
-            key={lang.code}
-            selected={i18n.language === lang.code}
-            onClick={() => {
-              i18n.changeLanguage(lang.code);
-              setAnchorEl(null);
-            }}
-          >
-            {lang.label}
-          </MenuItem>
-        ))}
-      </Menu>
+        <Icon.Globe />
+      </button>
+      {anchor && (
+        <Popover
+          anchor={anchor}
+          onClose={() => setAnchor(null)}
+          className="fp-lang-popover"
+        >
+          <div className="fp-lang-popover-title">{t("lang.title")}</div>
+          <div className="fp-lang-grid">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                className={`fp-lang-btn ${i18n.language?.startsWith(l.code) ? "is-active" : ""}`}
+                onClick={() => {
+                  void i18n.changeLanguage(l.code);
+                  setAnchor(null);
+                }}
+              >
+                <div className="fp-lang-row">
+                  <span className="fp-lang-flag">{l.flag}</span>
+                  <span className="fp-lang-en">{l.en}</span>
+                </div>
+                <span className="fp-lang-native">{l.native}</span>
+              </button>
+            ))}
+          </div>
+        </Popover>
+      )}
     </>
   );
 }

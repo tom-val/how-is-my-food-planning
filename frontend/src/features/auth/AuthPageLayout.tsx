@@ -1,53 +1,48 @@
-import { Container, Box, Typography, Avatar, alpha } from "@mui/material";
-import { Restaurant } from "@mui/icons-material";
-import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 import { LanguageSwitcher } from "../../components/shared/LanguageSwitcher";
+import { Icon } from "../../components/sage/Icon";
 
-export function AuthPageLayout({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
-
+export function AuthPageLayout({ children }: { children: ReactNode }) {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        bgcolor: "background.default",
-      }}
-    >
-      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-        <LanguageSwitcher />
-      </Box>
-
-      <Container
-        maxWidth="xs"
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          py: 4,
-        }}
-      >
-        <Box sx={{ textAlign: "center", mb: 3 }}>
-          <Avatar
-            sx={{
-              mx: "auto",
-              mb: 1.5,
-              width: 56,
-              height: 56,
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
-              color: "primary.main",
+    <div className="fp-app">
+      <div className="fp-auth">
+        <div style={{ position: "absolute", top: 16, right: 16 }}>
+          <LanguageSwitcher />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            maxWidth: 420,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 24,
+              fontFamily: "var(--font-display)",
+              fontSize: 28,
+              color: "var(--sage-800)",
+              letterSpacing: "-0.01em",
             }}
           >
-            <Restaurant fontSize="large" />
-          </Avatar>
-          <Typography variant="h5" fontWeight={700} color="text.primary">
-            {t("app.title")}
-          </Typography>
-        </Box>
-        {children}
-      </Container>
-    </Box>
+            <span
+              className="fp-brand-mark"
+              style={{ width: 44, height: 44, borderRadius: 14 }}
+            >
+              <Icon.Leaf style={{ width: 22, height: 22 }} />
+            </span>
+            <span>
+              Food<b style={{ fontWeight: 500 }}> Planning</b>
+            </span>
+          </div>
+          <div className="fp-auth-card">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 }

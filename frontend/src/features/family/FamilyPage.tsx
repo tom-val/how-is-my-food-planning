@@ -1,31 +1,4 @@
 import { useState } from "react";
-import {
-  Typography,
-  Box,
-  Button,
-  TextField,
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  ListItemSecondaryAction,
-  Avatar,
-  IconButton,
-  Alert,
-  Chip,
-  Tooltip,
-  Divider,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  alpha,
-} from "@mui/material";
-import { ContentCopy, PersonRemove, Refresh, ExitToApp, ArrowUpward } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
@@ -38,8 +11,29 @@ import {
   promoteMember,
   leaveFamily,
 } from "../../api/familyApi";
+import { Icon } from "../../components/sage/Icon";
+import { Spinner } from "../../components/sage/Spinner";
+import { Modal } from "../../components/sage/Modal";
 
 type View = "loading" | "noFamily" | "create" | "join" | "members";
+
+const MEMBER_COLOURS = [
+  "linear-gradient(135deg, oklch(0.55 0.12 145), oklch(0.45 0.13 145))",
+  "linear-gradient(135deg, oklch(0.6 0.13 35), oklch(0.5 0.14 30))",
+  "linear-gradient(135deg, oklch(0.58 0.12 250), oklch(0.45 0.13 245))",
+  "linear-gradient(135deg, oklch(0.6 0.12 60), oklch(0.5 0.13 55))",
+  "linear-gradient(135deg, oklch(0.55 0.13 320), oklch(0.45 0.14 315))",
+  "linear-gradient(135deg, oklch(0.58 0.1 195), oklch(0.45 0.11 190))",
+];
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export default function FamilyPage() {
   const { t } = useTranslation();
@@ -50,15 +44,18 @@ export default function FamilyPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
-  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<{ userId: string; displayName: string } | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<{
+    userId: string;
+    displayName: string;
+  } | null>(null);
 
   const { data: familyData, isLoading } = useQuery({
     queryKey: ["family", "my"],
     queryFn: getMyFamily,
   });
 
-  const currentView = isLoading
+  const currentView: View = isLoading
     ? "loading"
     : familyData
       ? "members"
@@ -86,9 +83,7 @@ export default function FamilyPage() {
 
   const regenerateMutation = useMutation({
     mutationFn: () => regenerateInviteCode(familyData!.family.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["family"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["family"] }),
   });
 
   const removeMutation = useMutation({
@@ -96,21 +91,20 @@ export default function FamilyPage() {
       removeMember(familyData!.family.id, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family"] });
+      setMemberToRemove(null);
     },
   });
 
   const promoteMutation = useMutation({
     mutationFn: (userId: string) =>
       promoteMember(familyData!.family.id, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["family"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["family"] }),
   });
 
   const leaveMutation = useMutation({
     mutationFn: leaveFamily,
     onSuccess: () => {
-      setIsLeaveDialogOpen(false);
+      setLeaveOpen(false);
       queryClient.invalidateQueries({ queryKey: ["family"] });
     },
   });
@@ -124,305 +118,310 @@ export default function FamilyPage() {
     setTimeout(() => setCodeCopied(false), 2000);
   };
 
-  const isOwner = familyData?.family.createdBy === user?.sub;
-
-  if (currentView === "loading") {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (currentView === "loading") return <Spinner />;
 
   if (currentView === "noFamily") {
     return (
-      <Box maxWidth={400} mx="auto" mt={4}>
-        <Typography variant="h5" gutterBottom>
-          {t("family.noFamily")}
-        </Typography>
-        <Box display="flex" flexDirection="column" gap={2} mt={3}>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => setView("create")}
-          >
-            {t("family.create")}
-          </Button>
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={() => setView("join")}
-          >
-            {t("family.join")}
-          </Button>
-        </Box>
-      </Box>
+      <div className="fp-main-narrow">
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-mark">
+            <Icon.Users />
+          </div>
+          <div className="fp-emptystate-title">{t("family.noFamily")}</div>
+          <div className="fp-emptystate-sub" style={{ marginTop: 14, gap: 8 }}>
+            <button
+              type="button"
+              className="fp-btn fp-btn-primary"
+              onClick={() => setView("create")}
+            >
+              <Icon.Plus />
+              {t("family.create")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setView("join")}
+            >
+              {t("family.join")}
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (currentView === "create") {
     return (
-      <Box maxWidth={400} mx="auto" mt={4}>
-        <Card><CardContent sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            {t("family.create")}
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box
-            component="form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              createMutation.mutate();
-            }}
-          >
-            <TextField
-              fullWidth
-              label={t("family.name")}
+      <div className="fp-main-narrow">
+        <div className="fp-page-head">
+          <div>
+            <div className="fp-page-eyebrow">{t("family.noFamily")}</div>
+            <h1>
+              {t("family.create").split(" ")[0]}{" "}
+              <em>{t("family.create").split(" ").slice(1).join(" ")}</em>
+            </h1>
+          </div>
+        </div>
+        {error && <div className="fp-alert fp-alert-error">{error}</div>}
+        <form
+          className="fp-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            createMutation.mutate();
+          }}
+        >
+          <div className="fp-field">
+            <label className="fp-field-label">
+              {t("family.name")} <span className="fp-field-req">{t("recipes.required")}</span>
+            </label>
+            <input
+              className="fp-input fp-input-lg"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              margin="normal"
+              autoFocus
               required
             />
-
-            <Box display="flex" gap={1} mt={2}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={createMutation.isPending}
-                fullWidth
-              >
-                {t("family.create")}
-              </Button>
-              <Button variant="outlined" onClick={() => setView("noFamily")} fullWidth>
-                {t("common.cancel")}
-              </Button>
-            </Box>
-          </Box>
-        </CardContent></Card>
-      </Box>
+          </div>
+          <div className="fp-form-foot">
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setView("noFamily")}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              className="fp-btn fp-btn-primary"
+              disabled={createMutation.isPending || !name.trim()}
+            >
+              <Icon.Check />
+              {t("family.create")}
+            </button>
+          </div>
+        </form>
+      </div>
     );
   }
 
   if (currentView === "join") {
     return (
-      <Box maxWidth={400} mx="auto" mt={4}>
-        <Card><CardContent sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>
-            {t("family.join")}
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box
-            component="form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              joinMutation.mutate();
-            }}
-          >
-            <TextField
-              fullWidth
-              label={t("family.inviteCode")}
+      <div className="fp-main-narrow">
+        <div className="fp-page-head">
+          <div>
+            <div className="fp-page-eyebrow">{t("family.noFamily")}</div>
+            <h1>
+              {t("family.join").split(" ")[0]}{" "}
+              <em>{t("family.join").split(" ").slice(1).join(" ")}</em>
+            </h1>
+          </div>
+        </div>
+        {error && <div className="fp-alert fp-alert-error">{error}</div>}
+        <form
+          className="fp-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            joinMutation.mutate();
+          }}
+        >
+          <div className="fp-field">
+            <label className="fp-field-label">
+              {t("family.inviteCode")} <span className="fp-field-req">{t("recipes.required")}</span>
+            </label>
+            <input
+              className="fp-input fp-input-lg"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
-              margin="normal"
+              autoFocus
               required
             />
-
-            <Box display="flex" gap={1} mt={2}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={joinMutation.isPending}
-                fullWidth
-              >
-                {t("family.join")}
-              </Button>
-              <Button variant="outlined" onClick={() => setView("noFamily")} fullWidth>
-                {t("common.cancel")}
-              </Button>
-            </Box>
-          </Box>
-        </CardContent></Card>
-      </Box>
+          </div>
+          <div className="fp-form-foot">
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setView("noFamily")}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              className="fp-btn fp-btn-primary"
+              disabled={joinMutation.isPending || !inviteCode.trim()}
+            >
+              <Icon.Check />
+              {t("family.join")}
+            </button>
+          </div>
+        </form>
+      </div>
     );
   }
 
-  // Members view.
+  // Members view
   const family = familyData!.family;
   const members = familyData!.members;
-
-  const memberColours = [
-    "#2e7d32", "#1565c0", "#c62828", "#6a1b9a",
-    "#e65100", "#00838f", "#4e342e", "#37474f",
-  ];
-
-  const getMemberColour = (index: number) =>
-    memberColours[index % memberColours.length];
-
-  const getInitials = (name: string) =>
-    name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  const isOwner = family.createdBy === user?.sub;
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        {family.name}
-      </Typography>
+    <div className="fp-main-wide">
+      <div className="fp-page-head">
+        <div>
+          <div className="fp-page-eyebrow">
+            {t("family.eyebrow", { count: members.length })}
+          </div>
+          <h1>
+            {t("family.title").split(" ").slice(0, -1).join(" ")}{" "}
+            <em>{t("family.title").split(" ").slice(-1)[0]}</em>
+          </h1>
+          <div className="fp-page-sub">{t("family.subtitle")}</div>
+        </div>
+      </div>
 
-      <Card sx={{ mb: 3, bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-        <CardContent>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            {t("family.inviteCode")}
-          </Typography>
-          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-            <Chip
-              label={family.inviteCode}
-              color="primary"
-              variant="outlined"
-              sx={{ fontFamily: "monospace", fontSize: "1rem", letterSpacing: "0.1em", py: 0.5 }}
-            />
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<ContentCopy />}
-              onClick={() => handleCopyLink(family.inviteCode)}
-            >
-              {codeCopied ? t("family.codeCopied") : t("family.copyLink")}
-            </Button>
-            {isOwner && (
-              <Tooltip title={t("family.regenerateCode")}>
-                <IconButton
-                  size="small"
-                  onClick={() => regenerateMutation.mutate()}
-                  disabled={regenerateMutation.isPending}
-                >
-                  <Refresh fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        {t("family.members")} ({members.length})
-      </Typography>
-      <Card>
-        <List disablePadding>
-          {members.map((member, index) => (
-            <Box key={member.id}>
-              {index > 0 && <Divider />}
-              <ListItem sx={{ py: 1.5 }}>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: getMemberColour(index), width: 36, height: 36, fontSize: "0.85rem" }}>
-                    {getInitials(member.displayName)}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography fontWeight={500}>{member.displayName}</Typography>
-                      {member.role === "owner" && (
-                        <Chip label={t("family.owner")} size="small" color="primary" variant="outlined" />
-                      )}
-                    </Box>
-                  }
-                />
-                {isOwner && member.role !== "owner" && (
-                  <ListItemSecondaryAction>
-                    <Tooltip title={t("family.promote")}>
-                      <IconButton
-                        size="small"
-                        onClick={() => promoteMutation.mutate(member.userId)}
-                        disabled={promoteMutation.isPending}
-                      >
-                        <ArrowUpward fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <IconButton
-                      size="small"
-                      edge="end"
-                      onClick={() => setMemberToRemove({ userId: member.userId, displayName: member.displayName })}
-                    >
-                      <PersonRemove fontSize="small" />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                )}
-              </ListItem>
-            </Box>
-          ))}
-        </List>
-      </Card>
-
-      <Button
-        variant="outlined"
-        color="error"
-        startIcon={<ExitToApp />}
-        onClick={() => setIsLeaveDialogOpen(true)}
-        sx={{ mt: 3 }}
-      >
-        {t("family.leave")}
-      </Button>
-
-      <Dialog
-        open={isLeaveDialogOpen}
-        onClose={() => setIsLeaveDialogOpen(false)}
-      >
-        <DialogTitle>{t("family.leaveConfirmTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t("family.leaveConfirmMessage")}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsLeaveDialogOpen(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            color="error"
-            onClick={() => leaveMutation.mutate()}
-            disabled={leaveMutation.isPending}
+      <div className="fp-invite-card">
+        <div className="fp-invite-card-body">
+          <div className="fp-invite-label">{t("family.inviteCode")}</div>
+          <span className="fp-invite-code">{family.inviteCode}</span>
+        </div>
+        <div className="fp-invite-actions">
+          <button
+            type="button"
+            className="fp-btn fp-btn-primary"
+            onClick={() => handleCopyLink(family.inviteCode)}
           >
-            {t("family.leave")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Icon.Copy />
+            {codeCopied ? t("family.codeCopied") : t("family.copyLink")}
+          </button>
+          {isOwner && (
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => regenerateMutation.mutate()}
+              disabled={regenerateMutation.isPending}
+            >
+              <Icon.Refresh />
+              {t("family.regenerateCode")}
+            </button>
+          )}
+        </div>
+      </div>
 
-      <Dialog
+      <div className="fp-family-grid">
+        {members.map((m, idx) => {
+          const bg = MEMBER_COLOURS[idx % MEMBER_COLOURS.length];
+          const canManage = isOwner && m.role !== "owner";
+          return (
+            <div className="fp-family-card" key={m.id}>
+              {canManage && (
+                <div className="fp-family-actions no-print">
+                  <button
+                    type="button"
+                    className="fp-icon-btn"
+                    onClick={() => promoteMutation.mutate(m.userId)}
+                    title={t("family.promote")}
+                    disabled={promoteMutation.isPending}
+                  >
+                    <Icon.Chevron dir="up" />
+                  </button>
+                  <button
+                    type="button"
+                    className="fp-icon-btn"
+                    onClick={() =>
+                      setMemberToRemove({
+                        userId: m.userId,
+                        displayName: m.displayName,
+                      })
+                    }
+                    title={t("family.removeMember")}
+                  >
+                    <Icon.X />
+                  </button>
+                </div>
+              )}
+              <div className="fp-family-avatar" style={{ background: bg }}>
+                {initials(m.displayName)}
+              </div>
+              <div className="fp-family-name">{m.displayName}</div>
+              <div className="fp-family-role">
+                {m.role === "owner" ? t("family.owner") : t("family.member")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        className="fp-btn fp-btn-danger"
+        onClick={() => setLeaveOpen(true)}
+      >
+        <Icon.Logout />
+        {t("family.leave")}
+      </button>
+
+      <Modal
+        open={leaveOpen}
+        onClose={() => setLeaveOpen(false)}
+        title={t("family.leaveConfirmTitle")}
+        footer={
+          <>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setLeaveOpen(false)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-danger"
+              disabled={leaveMutation.isPending}
+              onClick={() => leaveMutation.mutate()}
+            >
+              <Icon.Logout />
+              {t("family.leave")}
+            </button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, color: "var(--muted)" }}>
+          {t("family.leaveConfirmMessage")}
+        </p>
+      </Modal>
+
+      <Modal
         open={!!memberToRemove}
         onClose={() => setMemberToRemove(null)}
-      >
-        <DialogTitle>{t("family.removeConfirmTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t("family.removeConfirmMessage", { name: memberToRemove?.displayName })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMemberToRemove(null)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            color="error"
-            onClick={() => {
-              if (memberToRemove) {
-                removeMutation.mutate(memberToRemove.userId, {
-                  onSuccess: () => setMemberToRemove(null),
-                });
+        title={t("family.removeConfirmTitle")}
+        footer={
+          <>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setMemberToRemove(null)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-danger"
+              disabled={removeMutation.isPending}
+              onClick={() =>
+                memberToRemove && removeMutation.mutate(memberToRemove.userId)
               }
-            }}
-            disabled={removeMutation.isPending}
-          >
-            {t("family.removeMember")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            >
+              <Icon.Trash />
+              {t("family.removeMember")}
+            </button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, color: "var(--muted)" }}>
+          {t("family.removeConfirmMessage", {
+            name: memberToRemove?.displayName,
+          })}
+        </p>
+      </Modal>
+    </div>
   );
 }

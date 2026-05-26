@@ -1,26 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Typography,
-  Box,
-  Card,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Checkbox,
-  Divider,
-  CircularProgress,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Chip,
-  IconButton,
-  TextField,
-} from "@mui/material";
-import { Refresh, ChevronLeft, ChevronRight, Print, Add } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -28,32 +6,39 @@ import {
   generateShoppingList,
   toggleItem,
   addCustomItem,
+  type ShoppingListResponse,
 } from "../../api/shoppingApi";
-import type { ShoppingListResponse } from "../../api/shoppingApi";
 import { getPlan, getMonday } from "../../api/plannerApi";
+import { Icon } from "../../components/sage/Icon";
+import { Spinner } from "../../components/sage/Spinner";
+import { Modal } from "../../components/sage/Modal";
+import {
+  isoWeek,
+  parseLocalDate,
+  weekOffsetLabel,
+  weekRangeLabel,
+} from "../../components/sage/dateUtils";
 
 export default function ShoppingListPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(() => {
-    // Restore last viewed week from localStorage.
     try {
       const saved = localStorage.getItem("shopping.lastWeekStart");
       if (!saved) return 0;
-      const savedDate = new Date(saved);
-      const todayMonday = new Date(getMonday(new Date()));
+      const savedDate = parseLocalDate(saved);
+      const todayMonday = parseLocalDate(getMonday(new Date()));
       const diffMs = savedDate.getTime() - todayMonday.getTime();
-      const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
-      return diffWeeks;
+      return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
     } catch {
       return 0;
     }
   });
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [customItemName, setCustomItemName] = useState("");
-  const [customItemQuantity, setCustomItemQuantity] = useState("");
-  const [customItemUnit, setCustomItemUnit] = useState("");
-  const [isRefreshDialogOpen, setIsRefreshDialogOpen] = useState(false);
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [itemName, setItemName] = useState("");
+  const [itemQty, setItemQty] = useState("");
+  const [itemUnit, setItemUnit] = useState("");
 
   const weekStart = useMemo(() => {
     const today = new Date();
@@ -61,29 +46,24 @@ export default function ShoppingListPage() {
     return getMonday(today);
   }, [weekOffset]);
 
-  // Persist last viewed week.
   useEffect(() => {
     try {
       localStorage.setItem("shopping.lastWeekStart", weekStart);
     } catch {
-      // Ignore storage errors.
+      /* ignore */
     }
   }, [weekStart]);
 
-  const weekLabel = useMemo(() => {
-    const start = new Date(weekStart);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    const fmt = (d: Date) =>
-      d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    return `${fmt(start)} – ${fmt(end)}`;
-  }, [weekStart]);
+  const monday = parseLocalDate(weekStart);
+  const locale = i18n.language;
+  const weekNo = isoWeek(monday);
+  const lbl = weekOffsetLabel(weekOffset, (k, opts) => t(k, opts));
+  const range = weekRangeLabel(monday, locale);
 
   const { data: planData, isLoading: isPlanLoading } = useQuery({
     queryKey: ["plan", weekStart],
     queryFn: () => getPlan(weekStart),
   });
-
   const planId = planData?.plan.id;
 
   const { data: shoppingData, isLoading: isItemsLoading } = useQuery({
@@ -92,18 +72,23 @@ export default function ShoppingListPage() {
     enabled: !!planId,
   });
 
-  const items = shoppingData?.items;
+  const items = shoppingData?.items ?? [];
   const recipeMappings = shoppingData?.recipeMappings ?? [];
 
-  const getRecipesForIngredient = (ingredientName: string, unit: string | null): string[] => {
-    return recipeMappings
+  const getRecipesFor = (name: string, unit: string | null): string[] =>
+    recipeMappings
       .filter(
         (m) =>
-          m.ingredientName.toLowerCase() === ingredientName.toLowerCase() &&
+          m.ingredientName.toLowerCase() === name.toLowerCase() &&
           (m.unit?.toLowerCase() ?? "") === (unit?.toLowerCase() ?? ""),
       )
       .map((m) => m.recipeName);
-  };
+
+  const total = items.length;
+  const done = items.filter((i) => i.isChecked).length;
+  const pct = total === 0 ? 0 : done / total;
+  const pctInt = Math.round(pct * 100);
+  const C = 2 * Math.PI * 30;
 
   const toggleMutation = useMutation({
     mutationFn: ({ itemId, isChecked }: { itemId: string; isChecked: boolean }) =>
@@ -127,16 +112,15 @@ export default function ShoppingListPage() {
         },
       );
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] });
-    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] }),
   });
 
   const regenerateMutation = useMutation({
     mutationFn: () => generateShoppingList(planId!),
     onSuccess: (data) => {
       queryClient.setQueryData(["shopping-list", planId], data);
-      setIsRefreshDialogOpen(false);
+      setRefreshOpen(false);
     },
   });
 
@@ -144,263 +128,278 @@ export default function ShoppingListPage() {
     mutationFn: () =>
       addCustomItem(
         planId!,
-        customItemName.trim(),
-        customItemQuantity ? Number(customItemQuantity) : null,
-        customItemUnit.trim() || null,
+        itemName.trim(),
+        itemQty ? Number(itemQty) : null,
+        itemUnit.trim() || null,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopping-list", planId] });
-      setCustomItemName("");
-      setCustomItemQuantity("");
-      setCustomItemUnit("");
-      setIsAddDialogOpen(false);
+      setItemName("");
+      setItemQty("");
+      setItemUnit("");
+      setAddOpen(false);
     },
   });
 
+  if (isPlanLoading || isItemsLoading) return <Spinner />;
 
-  const isLoading = isPlanLoading || isItemsLoading;
-  const checkedCount = items?.filter((i) => i.isChecked).length ?? 0;
-  const totalCount = items?.length ?? 0;
-
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const summaryTitle =
+    total === 0
+      ? t("shopping.empty")
+      : pctInt === 100
+        ? t("shopping.summaryDone")
+        : t("shopping.summaryTitle", { pct: pctInt });
 
   return (
-    <Box>
-      {/* Week navigation */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <IconButton onClick={() => setWeekOffset((o) => o - 1)} className="no-print">
-          <ChevronLeft />
-        </IconButton>
-        <Box textAlign="center">
-          <Typography variant="h4">{t("shopping.title")}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {weekLabel}
-          </Typography>
-        </Box>
-        <IconButton onClick={() => setWeekOffset((o) => o + 1)} className="no-print">
-          <ChevronRight />
-        </IconButton>
-      </Box>
+    <div className="fp-main-wide">
+      <div className="fp-page-head">
+        <div>
+          <div className="fp-page-eyebrow">{t("shopping.eyebrow")}</div>
+          <h1>
+            {t("shopping.title")} <em>{t("shopping.titleAccent")}</em>
+          </h1>
+          <div className="fp-page-sub">
+            {t("shopping.subtitle", { range })} · Week {weekNo}
+          </div>
+        </div>
+        <div className="fp-weeknav">
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            aria-label="Previous week"
+          >
+            <Icon.Chevron dir="left" />
+          </button>
+          <span className="fp-weeknav-label">
+            <span className="display">{lbl.head}</span>
+            {lbl.tail}
+          </span>
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            aria-label="Next week"
+          >
+            <Icon.Chevron dir="right" />
+          </button>
+        </div>
+      </div>
 
-      {weekOffset !== 0 && (
-        <Box display="flex" justifyContent="center" mb={2} className="no-print">
-          <Button size="small" onClick={() => setWeekOffset(0)}>
-            {t("planner.today")}
-          </Button>
-        </Box>
+      {total > 0 && (
+        <div className="fp-shop-summary">
+          <div className="fp-progress-ring">
+            <svg viewBox="0 0 76 76">
+              <circle
+                cx="38"
+                cy="38"
+                r="30"
+                fill="none"
+                stroke="oklch(0.94 0.025 145)"
+                strokeWidth={6}
+              />
+              <circle
+                cx="38"
+                cy="38"
+                r="30"
+                fill="none"
+                stroke="oklch(0.52 0.085 145)"
+                strokeWidth={6}
+                strokeLinecap="round"
+                strokeDasharray={`${C * pct} ${C}`}
+              />
+            </svg>
+            <div className="fp-progress-ring-label">
+              <span className="n">
+                {done}/{total}
+              </span>
+              <span className="l">{t("shopping.picked")}</span>
+            </div>
+          </div>
+          <div className="fp-shop-summary-body">
+            <div className="fp-shop-summary-title">
+              {pctInt === 100 ? (
+                <em>{summaryTitle}</em>
+              ) : (
+                <>
+                  You're <em>{pctInt}%</em> there
+                </>
+              )}
+            </div>
+            <div className="fp-shop-summary-sub">
+              {t("shopping.summarySub", { n: total - done })}
+            </div>
+          </div>
+          <div className="fp-shop-summary-actions no-print">
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setRefreshOpen(true)}
+              disabled={!planId}
+            >
+              <Icon.Refresh />
+              {t("shopping.refresh")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => window.print()}
+              disabled={!items.length}
+            >
+              <Icon.Printer />
+              {t("common.print")}
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Summary + actions */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        {totalCount > 0 ? (
-          <Chip
-            label={`${checkedCount} / ${totalCount}`}
-            color={checkedCount === totalCount ? "success" : "default"}
-            variant="outlined"
-          />
-        ) : (
-          <Box />
-        )}
-        <Box display="flex" gap={1} className="no-print">
-          <Button
-            size="small"
-            startIcon={<Print />}
-            onClick={() => window.print()}
-            disabled={!items?.length}
-          >
-            {t("common.print")}
-          </Button>
-          <Button
-            size="small"
-            startIcon={<Refresh />}
-            onClick={() => setIsRefreshDialogOpen(true)}
-            disabled={!planId}
-          >
-            {t("shopping.refresh")}
-          </Button>
-        </Box>
-      </Box>
+      <button
+        type="button"
+        className="fp-additem no-print"
+        onClick={() => setAddOpen(true)}
+        disabled={!planId}
+      >
+        <Icon.Plus />
+        {t("shopping.addItem")}
+      </button>
 
-      {/* Add custom item button */}
-      <Box mb={2} className="no-print">
-        <Button
-          size="small"
-          startIcon={<Add />}
-          onClick={() => setIsAddDialogOpen(true)}
-          disabled={!planId}
-        >
-          {t("shopping.addItem")}
-        </Button>
-      </Box>
-
-      {/* List */}
-      {!items?.length ? (
-        <Box textAlign="center" py={6}>
-          <Typography color="text.secondary">{t("shopping.empty")}</Typography>
-        </Box>
+      {items.length === 0 ? (
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-mark">
+            <Icon.Cart />
+          </div>
+          <div className="fp-emptystate-title">{t("shopping.empty")}</div>
+        </div>
       ) : (
-        <Card className="shopping-list-card">
-          <List disablePadding className="shopping-list-items">
-            {items.map((item, index) => {
-              const recipes = getRecipesForIngredient(item.ingredientName, item.unit);
-              return (
-                <Box key={item.id}>
-                  {index > 0 && <Divider />}
-                  <ListItem
-                    sx={{
-                      opacity: item.isChecked ? 0.5 : 1,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
-                      <Checkbox
-                        edge="start"
-                        checked={item.isChecked}
-                        onChange={() =>
-                          toggleMutation.mutate({
-                            itemId: item.id,
-                            isChecked: !item.isChecked,
-                          })
-                        }
-                        color="primary"
-                        className="no-print"
-                      />
-                      {/* Print-only empty checkbox */}
-                      <Box
-                        className="print-only"
-                        sx={{
-                          width: 14,
-                          height: 14,
-                          border: "1.5px solid #333",
-                          borderRadius: 0.5,
-                        }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          sx={{
-                            textDecoration: item.isChecked ? "line-through" : "none",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {item.ingredientName}
-                          {item.totalQuantity != null && (
-                            <Typography
-                              component="span"
-                              color="text.secondary"
-                              sx={{ ml: 1 }}
-                            >
-                              {item.totalQuantity} {item.unit ?? ""}
-                            </Typography>
-                          )}
-                        </Typography>
-                      }
-                      secondary={
-                        recipes.length > 0 && (
-                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5} className="no-print">
-                            {recipes.map((name) => (
-                              <Chip
-                                key={name}
-                                label={name}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 22, fontSize: "0.7rem" }}
-                              />
-                            ))}
-                          </Box>
-                        )
-                      }
-                    />
-                  </ListItem>
-                </Box>
-              );
-            })}
-          </List>
-        </Card>
+        <div className="fp-shop-list">
+          {items.map((item) => {
+            const sources = getRecipesFor(item.ingredientName, item.unit);
+            return (
+              <div
+                key={item.id}
+                className={`fp-shop-item ${item.isChecked ? "is-done" : ""}`}
+                onClick={() =>
+                  toggleMutation.mutate({
+                    itemId: item.id,
+                    isChecked: !item.isChecked,
+                  })
+                }
+              >
+                <span className={`fp-check ${item.isChecked ? "is-on" : ""}`}>
+                  {item.isChecked && <Icon.Check />}
+                </span>
+                <span>
+                  <span className="fp-shop-name">{item.ingredientName}</span>
+                  {item.totalQuantity != null && (
+                    <span className="fp-shop-qty">
+                      {item.totalQuantity} {item.unit ?? ""}
+                    </span>
+                  )}
+                </span>
+                {sources.length > 0 && (
+                  <span className="fp-shop-recipe" title={sources.join(", ")}>
+                    {sources.length === 1 ? sources[0] : `${sources[0]} +${sources.length - 1}`}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
-      {/* Refresh confirmation dialog */}
-      <Dialog
-        open={isRefreshDialogOpen}
-        onClose={() => setIsRefreshDialogOpen(false)}
+      <Modal
+        open={refreshOpen}
+        onClose={() => setRefreshOpen(false)}
+        title={t("shopping.refreshConfirmTitle")}
+        footer={
+          <>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setRefreshOpen(false)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-primary"
+              disabled={regenerateMutation.isPending}
+              onClick={() => regenerateMutation.mutate()}
+            >
+              <Icon.Refresh />
+              {t("shopping.refresh")}
+            </button>
+          </>
+        }
       >
-        <DialogTitle>{t("shopping.refreshConfirmTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t("shopping.refreshConfirmMessage")}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsRefreshDialogOpen(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => regenerateMutation.mutate()}
-            disabled={regenerateMutation.isPending}
-          >
-            {t("shopping.refresh")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <p style={{ margin: 0, color: "var(--muted)" }}>
+          {t("shopping.refreshConfirmMessage")}
+        </p>
+      </Modal>
 
-      {/* Add custom item dialog */}
-      <Dialog
-        open={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
+      <Modal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        title={t("shopping.addItem")}
+        footer={
+          <>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setAddOpen(false)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-primary"
+              disabled={!itemName.trim() || addItemMutation.isPending}
+              onClick={() => addItemMutation.mutate()}
+            >
+              <Icon.Check />
+              {t("common.save")}
+            </button>
+          </>
+        }
       >
-        <DialogTitle>{t("shopping.addItem")}</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label={t("shopping.itemName")}
-            value={customItemName}
-            onChange={(e) => setCustomItemName(e.target.value)}
-            margin="normal"
-            required
-            autoFocus
-          />
-          <Box display="flex" gap={1.5}>
-            <TextField
-              label={t("recipes.quantity")}
-              value={customItemQuantity}
-              onChange={(e) => setCustomItemQuantity(e.target.value)}
-              type="number"
-              inputProps={{ step: "any", min: 0 }}
-              sx={{ flex: 1 }}
-              margin="normal"
+        <div className="fp-form">
+          <div className="fp-field">
+            <label className="fp-field-label" style={{ fontSize: 16 }}>
+              {t("shopping.itemName")}
+            </label>
+            <input
+              className="fp-input"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              placeholder={t("shopping.addItemPlaceholder")}
+              autoFocus
             />
-            <TextField
-              label={t("recipes.unit")}
-              value={customItemUnit}
-              onChange={(e) => setCustomItemUnit(e.target.value)}
-              sx={{ flex: 1 }}
-              margin="normal"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsAddDialogOpen(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => addItemMutation.mutate()}
-            disabled={!customItemName.trim() || addItemMutation.isPending}
-          >
-            {t("common.save")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div className="fp-field" style={{ flex: 1 }}>
+              <label className="fp-field-label" style={{ fontSize: 16 }}>
+                {t("recipes.quantity")}
+              </label>
+              <input
+                className="fp-input"
+                type="number"
+                step="any"
+                min={0}
+                value={itemQty}
+                onChange={(e) => setItemQty(e.target.value)}
+              />
+            </div>
+            <div className="fp-field" style={{ flex: 1 }}>
+              <label className="fp-field-label" style={{ fontSize: 16 }}>
+                {t("recipes.unit")}
+              </label>
+              <input
+                className="fp-input"
+                value={itemUnit}
+                onChange={(e) => setItemUnit(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+    </div>
   );
 }

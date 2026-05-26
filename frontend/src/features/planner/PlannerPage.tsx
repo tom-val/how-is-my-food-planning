@@ -1,42 +1,5 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  IconButton,
-  Chip,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  List,
-  ListItemButton,
-  ListItemText,
-  CircularProgress,
-  useMediaQuery,
-  useTheme,
-  TextField,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  FormControlLabel,
-  Switch,
-} from "@mui/material";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Add,
-  Close,
-  Today,
-  Shuffle,
-  CalendarMonth,
-  Print,
-  Person,
-  PersonOff,
-  Casino,
-} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -45,69 +8,79 @@ import {
   addCustomMeal,
   removeMeal,
   scheduleMeal,
-  assignPlan,
   getMonday,
 } from "../../api/plannerApi";
 import { listRecipes } from "../../api/recipeApi";
-import { getMyFamily } from "../../api/familyApi";
 import type { PlannedMeal } from "../../api/plannerApi";
+import type { RecipeWithIngredients } from "../../api/recipeApi";
+import { Icon } from "../../components/sage/Icon";
+import { Spinner } from "../../components/sage/Spinner";
+import { useMobile } from "../../components/sage/useMobile";
+import {
+  addDays,
+  buildWeekDays,
+  isoWeek,
+  parseLocalDate,
+  weekOffsetLabel,
+  weekRangeLabel,
+} from "../../components/sage/dateUtils";
+import { MEAL_TYPES, type MealType } from "../../components/sage/mealMeta";
+import { MealRow } from "./MealRow";
+import { AddPicker } from "./AddPicker";
+import { MealActionsPopover } from "./MealActionsPopover";
+import { DicePop } from "./DicePop";
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
-const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+const SLOTS = MEAL_TYPES;
+const TOTAL_SLOTS = 28;
 
 function randomDateInRange(fromDays: number, toDays: number): string {
   const today = new Date();
-  const offset =
-    fromDays + Math.floor(Math.random() * (toDays - fromDays + 1));
+  const offset = fromDays + Math.floor(Math.random() * (toDays - fromDays + 1));
   today.setDate(today.getDate() + offset);
   return today.toISOString().split("T")[0];
 }
 
-function sameDayNextWeek(weekStart: string, dayOfWeek: number): string {
-  const d = new Date(weekStart);
-  d.setDate(d.getDate() + 7 + dayOfWeek);
-  return d.toISOString().split("T")[0];
+function isoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function PlannerPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMobile();
 
   const [weekOffset, setWeekOffset] = useState(() => {
-    // Restore last viewed week from localStorage.
     try {
       const saved = localStorage.getItem("planner.lastWeekStart");
       if (!saved) return 0;
-      const savedDate = new Date(saved);
-      const todayMonday = new Date(getMonday(new Date()));
+      const savedDate = parseLocalDate(saved);
+      const todayMonday = parseLocalDate(getMonday(new Date()));
       const diffMs = savedDate.getTime() - todayMonday.getTime();
-      const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
-      return diffWeeks;
+      return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
     } catch {
       return 0;
     }
   });
-  const [addDialog, setAddDialog] = useState<{
+  const [filter, setFilter] = useState<"all" | "unassigned">("all");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const [addAnchor, setAddAnchor] = useState<{
+    anchor: HTMLElement;
     dayOfWeek: number;
-    mealType: string;
+    slot: MealType;
   } | null>(null);
-  const [recipeSearch, setRecipeSearch] = useState("");
-  const [isShadowMode, setIsShadowMode] = useState(false);
-  const [customMealName, setCustomMealName] = useState("");
-
-  // Assign menu state.
-  const [assignAnchorEl, setAssignAnchorEl] = useState<HTMLElement | null>(null);
-
-  // Long-press schedule menu state.
-  const [scheduleMenu, setScheduleMenu] = useState<{
-    anchorEl: HTMLElement;
+  const [actionAnchor, setActionAnchor] = useState<{
+    anchor: HTMLElement;
     meal: PlannedMeal;
     dayOfWeek: number;
   } | null>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [diceAnchor, setDiceAnchor] = useState<{
+    anchor: HTMLElement;
+    dayOfWeek: number;
+    slot: MealType;
+    suggested: RecipeWithIngredients | null;
+  } | null>(null);
 
   const weekStart = useMemo(() => {
     const today = new Date();
@@ -115,12 +88,11 @@ export default function PlannerPage() {
     return getMonday(today);
   }, [weekOffset]);
 
-  // Persist last viewed week.
   useEffect(() => {
     try {
       localStorage.setItem("planner.lastWeekStart", weekStart);
     } catch {
-      // Ignore storage errors.
+      /* ignore */
     }
   }, [weekStart]);
 
@@ -128,521 +100,395 @@ export default function PlannerPage() {
     queryKey: ["plan", weekStart],
     queryFn: () => getPlan(weekStart),
   });
-
-  const { data: recipes } = useQuery({
-    queryKey: ["recipes"],
-    queryFn: listRecipes,
-  });
-
-  const { data: familyData } = useQuery({
-    queryKey: ["family", "my"],
-    queryFn: getMyFamily,
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: ({ assignedTo, assignedName }: { assignedTo: string | null; assignedName: string | null }) =>
-      assignPlan(planData!.plan.id, assignedTo, assignedName),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
-      setAssignAnchorEl(null);
-    },
-  });
-
-  const getRecipesForMealType = useCallback(
-    (mealType: string) => {
-      if (!recipes) return [];
-      return recipes.filter(
-        ({ recipe }) =>
-          recipe.categories.length === 0 ||
-          recipe.categories.includes(mealType),
-      );
-    },
-    [recipes],
-  );
-
-  const filteredRecipes = useMemo(() => {
-    const base = addDialog ? getRecipesForMealType(addDialog.mealType) : recipes ?? [];
-    if (!recipeSearch.trim()) return base;
-    const q = recipeSearch.toLowerCase();
-    return base.filter(({ recipe }) =>
-      recipe.name.toLowerCase().includes(q),
-    );
-  }, [recipes, recipeSearch, addDialog, getRecipesForMealType]);
+  const { data: recipes } = useQuery({ queryKey: ["recipes"], queryFn: listRecipes });
 
   const addMutation = useMutation({
-    mutationFn: (recipeId: string) =>
-      addMeal(
-        planData!.plan.id,
-        addDialog!.dayOfWeek,
-        addDialog!.mealType,
-        recipeId,
-        isShadowMode,
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
-      setAddDialog(null);
-      setRecipeSearch("");
-      setIsShadowMode(false);
-      setCustomMealName("");
-    },
+    mutationFn: ({
+      dayOfWeek,
+      slot,
+      recipeId,
+      isShadow,
+    }: {
+      dayOfWeek: number;
+      slot: MealType;
+      recipeId: string;
+      isShadow?: boolean;
+    }) =>
+      addMeal(planData!.plan.id, dayOfWeek, slot, recipeId, isShadow ?? false),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plan", weekStart] }),
   });
-
-  const customMealMutation = useMutation({
-    mutationFn: (name: string) =>
-      addCustomMeal(
-        planData!.plan.id,
-        addDialog!.dayOfWeek,
-        addDialog!.mealType,
-        name,
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
-      setAddDialog(null);
-      setRecipeSearch("");
-      setIsShadowMode(false);
-      setCustomMealName("");
-    },
+  const customMutation = useMutation({
+    mutationFn: ({
+      dayOfWeek,
+      slot,
+      name,
+    }: {
+      dayOfWeek: number;
+      slot: MealType;
+      name: string;
+    }) => addCustomMeal(planData!.plan.id, dayOfWeek, slot, name),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plan", weekStart] }),
   });
-
   const removeMutation = useMutation({
-    mutationFn: (mealId: string) => removeMeal(planData!.plan.id, mealId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
-    },
+    mutationFn: (meal: PlannedMeal) => removeMeal(planData!.plan.id, meal.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plan", weekStart] }),
   });
-
   const scheduleMutation = useMutation({
     mutationFn: ({
       date,
-      mealType,
+      slot,
       recipeId,
       isShadow,
     }: {
       date: string;
-      mealType: string;
+      slot: MealType;
       recipeId: string;
       isShadow: boolean;
-    }) => scheduleMeal(date, mealType, recipeId, isShadow),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["plan"] });
-      setScheduleMenu(null);
-    },
+    }) => scheduleMeal(date, slot, recipeId, isShadow),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["plan"] }),
   });
 
-  const getMealsForSlot = (
-    dayOfWeek: number,
-    mealType: string,
-  ): PlannedMeal[] =>
-    planData?.meals.filter(
-      (m) => m.dayOfWeek === dayOfWeek && m.mealType === mealType,
-    ) ?? [];
+  const monday = parseLocalDate(weekStart);
+  const todayMonday = parseLocalDate(getMonday(new Date()));
+  const locale = i18n.language;
 
-  const weekLabel = useMemo(() => {
-    const start = new Date(weekStart);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    const fmt = (d: Date) =>
-      d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    return `${fmt(start)} – ${fmt(end)}`;
-  }, [weekStart]);
-
-  const longPressTriggered = useRef(false);
-
-  const handleLongPressStart = useCallback(
-    (e: React.MouseEvent | React.TouchEvent, meal: PlannedMeal, dayOfWeek: number) => {
-      longPressTriggered.current = false;
-      // Custom meals can't be scheduled (no recipe to repeat).
-      if (meal.isCustom) return;
-      const target = e.currentTarget as HTMLElement;
-      longPressTimer.current = setTimeout(() => {
-        longPressTriggered.current = true;
-        setScheduleMenu({ anchorEl: target, meal, dayOfWeek });
-      }, 1500);
-    },
-    [],
+  const days = useMemo(
+    () => buildWeekDays(monday, (k) => t(k), locale),
+    [monday, locale, t],
   );
 
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
+  const lbl = weekOffsetLabel(weekOffset, (k, opts) => t(k, opts));
+  const range = weekRangeLabel(monday, locale);
+  const weekNo = isoWeek(monday);
+  const year = monday.getFullYear();
 
-  const handleChipClick = useCallback(
-    (meal: PlannedMeal) => {
-      if (!longPressTriggered.current && meal.recipeId) {
-        navigate(`/recipes/${meal.recipeId}`);
-      }
-    },
-    [navigate],
+  const getMealsForSlot = (dayOfWeek: number, slot: MealType): PlannedMeal[] =>
+    planData?.meals.filter((m) => m.dayOfWeek === dayOfWeek && m.mealType === slot) ?? [];
+
+  const plannedCount = useMemo(() => {
+    if (!planData) return 0;
+    const filled = new Set<string>();
+    for (const m of planData.meals) filled.add(`${m.dayOfWeek}-${m.mealType}`);
+    return filled.size;
+  }, [planData]);
+
+  const stripWeeks = useMemo(
+    () =>
+      [-2, -1, 0, 1, 2].map((off) => {
+        const target = weekOffset + off;
+        const m = addDays(todayMonday, target * 7);
+        return {
+          offset: target,
+          monday: m,
+          label: weekOffsetLabel(target, (k, opts) => t(k, opts)),
+          range: weekRangeLabel(m, locale),
+          isToday: target === 0,
+        };
+      }),
+    [weekOffset, todayMonday, t, locale],
   );
 
-  const handleSchedule = (date: string) => {
-    if (!scheduleMenu || !scheduleMenu.meal.recipeId) return;
-    scheduleMutation.mutate({
-      date,
-      mealType: scheduleMenu.meal.mealType,
-      recipeId: scheduleMenu.meal.recipeId,
-      isShadow: scheduleMenu.meal.isShadow,
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2400);
+  };
+
+  const handlePickRecipe = (recipe: RecipeWithIngredients) => {
+    if (!addAnchor) return;
+    addMutation.mutate({
+      dayOfWeek: addAnchor.dayOfWeek,
+      slot: addAnchor.slot,
+      recipeId: recipe.recipe.id,
     });
+    setAddAnchor(null);
+  };
+  const handlePickCustom = (name: string) => {
+    if (!addAnchor) return;
+    customMutation.mutate({
+      dayOfWeek: addAnchor.dayOfWeek,
+      slot: addAnchor.slot,
+      name,
+    });
+    setAddAnchor(null);
+  };
+  const handleCreateNew = (prefilled: string | null) => {
+    navigate("/recipes/new", { state: { prefilledName: prefilled } });
+  };
+
+  const handleCopyNextWeek = () => {
+    if (!actionAnchor?.meal.recipeId) return;
+    const slot = actionAnchor.meal.mealType as MealType;
+    const d = addDays(monday, actionAnchor.dayOfWeek + 7);
+    scheduleMutation.mutate({
+      date: isoDay(d),
+      slot,
+      recipeId: actionAnchor.meal.recipeId,
+      isShadow: actionAnchor.meal.isShadow,
+    });
+    showToast(t("planner.copiedToast", { when: t("planner.weekLabel.nextHead") + " " + t("planner.weekLabel.nextTail") }));
+  };
+  const handleScheduleRandom = (fromDays: number, toDays: number, whenLabel: string) => {
+    if (!actionAnchor?.meal.recipeId) return;
+    scheduleMutation.mutate({
+      date: randomDateInRange(fromDays, toDays),
+      slot: actionAnchor.meal.mealType as MealType,
+      recipeId: actionAnchor.meal.recipeId,
+      isShadow: actionAnchor.meal.isShadow,
+    });
+    showToast(t("planner.copiedToast", { when: whenLabel }));
+  };
+
+  const handleDice = (anchor: HTMLElement, dayOfWeek: number, slot: MealType) => {
+    if (!recipes || recipes.length === 0) return;
+    const matches = recipes.filter(
+      ({ recipe }) =>
+        recipe.categories.length === 0 || recipe.categories.includes(slot),
+    );
+    const pool = matches.length > 0 ? matches : recipes;
+    // eslint-disable-next-line react-hooks/purity
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setDiceAnchor({ anchor, dayOfWeek, slot, suggested: pick });
+  };
+  const handleDiceReroll = () => {
+    if (!diceAnchor || !recipes) return;
+    const matches = recipes.filter(
+      ({ recipe }) =>
+        recipe.categories.length === 0 || recipe.categories.includes(diceAnchor.slot),
+    );
+    const pool = matches.length > 0 ? matches : recipes;
+    const remaining =
+      pool.length > 1 && diceAnchor.suggested
+        ? pool.filter((r) => r.recipe.id !== diceAnchor.suggested!.recipe.id)
+        : pool;
+    const pick = remaining[Math.floor(Math.random() * remaining.length)];
+    setDiceAnchor({ ...diceAnchor, suggested: pick });
+  };
+  const handleDiceAccept = () => {
+    if (!diceAnchor?.suggested) return;
+    addMutation.mutate({
+      dayOfWeek: diceAnchor.dayOfWeek,
+      slot: diceAnchor.slot,
+      recipeId: diceAnchor.suggested.recipe.id,
+    });
+    setDiceAnchor(null);
   };
 
   if (isPlanLoading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Spinner />;
   }
 
   return (
-    <Box>
-      {/* Week navigation */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <IconButton onClick={() => setWeekOffset((o) => o - 1)} className="no-print">
-          <ChevronLeft />
-        </IconButton>
-        <Box textAlign="center">
-          <Typography variant="h4">{t("planner.title")}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {weekLabel}
-          </Typography>
-        </Box>
-        <IconButton onClick={() => setWeekOffset((o) => o + 1)} className="no-print">
-          <ChevronRight />
-        </IconButton>
-      </Box>
+    <div className="fp-main-wide">
+      <div className="fp-page-head">
+        <div>
+          <div className="fp-page-eyebrow">
+            {t("planner.eyebrow", { week: weekNo, year })}
+          </div>
+          <h1>
+            {t("planner.title")} <em>{t("planner.titleAccent")}</em>
+          </h1>
+          <div className="fp-page-sub">
+            {t("planner.subtitle", {
+              range,
+              planned: plannedCount,
+              total: TOTAL_SLOTS,
+            })}
+          </div>
+        </div>
+        <div className="fp-weeknav">
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            aria-label="Previous week"
+          >
+            <Icon.Chevron dir="left" />
+          </button>
+          <span className="fp-weeknav-label">
+            <span className="display">{lbl.head}</span>
+            {lbl.tail}
+          </span>
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            aria-label="Next week"
+          >
+            <Icon.Chevron dir="right" />
+          </button>
+        </div>
+      </div>
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        {/* Assignee chip */}
-        <Chip
-          icon={planData?.plan.assignedName ? <Person /> : <PersonOff />}
-          label={planData?.plan.assignedName ?? t("planner.unassigned")}
-          variant={planData?.plan.assignedName ? "filled" : "outlined"}
-          color={planData?.plan.assignedName ? "primary" : "default"}
-          onClick={(e) => setAssignAnchorEl(e.currentTarget)}
-          size="small"
-          className="no-print-action"
-        />
-        {/* Print-only assignee text */}
-        {planData?.plan.assignedName && (
-          <Typography className="print-only" variant="body2" fontWeight={600}>
-            {planData.plan.assignedName}
-          </Typography>
-        )}
-
-        <Box display="flex" gap={1} className="no-print">
+      {!isMobile && (
+        <div className="fp-weekstrip no-print">
+          {stripWeeks.map((w) => (
+            <button
+              key={w.offset}
+              type="button"
+              className={`fp-weekstrip-item ${w.offset === weekOffset ? "is-active" : ""} ${w.isToday ? "is-today" : ""}`}
+              onClick={() => setWeekOffset(w.offset)}
+            >
+              <span className="fp-weekstrip-label">
+                {w.label.head} {w.label.tail}
+              </span>
+              <span className="fp-weekstrip-range">{w.range}</span>
+            </button>
+          ))}
           {weekOffset !== 0 && (
-            <Button size="small" onClick={() => setWeekOffset(0)}>
-              {t("planner.today")}
-            </Button>
+            <button
+              type="button"
+              className="fp-weekstrip-jump"
+              onClick={() => setWeekOffset(0)}
+            >
+              <Icon.Calendar />
+              {t("planner.jumpToToday")}
+            </button>
           )}
-          <Button
-            size="small"
-            startIcon={<Print />}
+        </div>
+      )}
+
+      <div className="fp-toolbar no-print">
+        <div className="fp-chipset">
+          <button
+            type="button"
+            className={`fp-chip ${filter === "all" ? "is-active" : ""}`}
+            onClick={() => setFilter("all")}
+          >
+            {t("planner.filters.all")}
+          </button>
+          <button
+            type="button"
+            className={`fp-chip ${filter === "unassigned" ? "is-active" : ""}`}
+            onClick={() => setFilter("unassigned")}
+          >
+            <Icon.Plus />
+            {t("planner.filters.unassigned")}
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {isMobile && weekOffset !== 0 && (
+            <button
+              type="button"
+              className="fp-textbtn"
+              onClick={() => setWeekOffset(0)}
+            >
+              <Icon.Calendar />
+              {t("planner.today")}
+            </button>
+          )}
+          <button
+            type="button"
+            className="fp-textbtn"
             onClick={() => window.print()}
           >
-            {t("common.print")}
-          </Button>
-        </Box>
-      </Box>
+            <Icon.Printer />
+            {isMobile ? t("planner.print") : t("planner.printWeek")}
+          </button>
+        </div>
+      </div>
 
-      {/* Assign menu */}
-      <Menu
-        anchorEl={assignAnchorEl}
-        open={!!assignAnchorEl}
-        onClose={() => setAssignAnchorEl(null)}
-      >
-        <MenuItem
-          onClick={() => assignMutation.mutate({ assignedTo: null, assignedName: null })}
-        >
-          <ListItemIcon><PersonOff fontSize="small" /></ListItemIcon>
-          <ListItemText>{t("planner.unassigned")}</ListItemText>
-        </MenuItem>
-        {familyData?.members.map((member) => (
-          <MenuItem
-            key={member.userId}
-            selected={planData?.plan.assignedTo === member.userId}
-            onClick={() =>
-              assignMutation.mutate({
-                assignedTo: member.userId,
-                assignedName: member.displayName,
-              })
-            }
-          >
-            <ListItemIcon><Person fontSize="small" /></ListItemIcon>
-            <ListItemText>{member.displayName}</ListItemText>
-          </MenuItem>
-        ))}
-      </Menu>
-
-      {/* Day cards */}
-      <Box display="flex" flexDirection="column" gap={2} className="planner-days-grid">
-        {DAY_KEYS.map((dayKey, dayIndex) => (
-          <Card key={dayKey}>
-            <CardContent sx={{ pb: "12px !important" }}>
-              <Typography variant="h6" gutterBottom>
-                {t(`days.${dayKey}`)}
-              </Typography>
-
-              {MEAL_TYPES.map((mealType) => {
-                const meals = getMealsForSlot(dayIndex, mealType);
-                return (
-                  <Box key={mealType} sx={{ mb: 1 }}>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      sx={{ mb: 0.5 }}
-                    >
-                      {t(`planner.${mealType}`)}
-                    </Typography>
-                    <Box
-                      display="flex"
-                      flexWrap="wrap"
-                      gap={0.5}
-                      alignItems="center"
-                    >
-                      {meals.map((meal) => (
-                        <Chip
-                          key={meal.id}
-                          label={
-                            meal.isShadow
-                              ? `${meal.recipeName} · ${t("planner.repeated")}`
-                              : meal.recipeName
-                          }
-                          onClick={() => handleChipClick(meal)}
-                          onDelete={() => removeMutation.mutate(meal.id)}
-                          size={isMobile ? "small" : "medium"}
-                          color={
-                            meal.isShadow || meal.isCustom ? "default" : "primary"
-                          }
-                          variant="outlined"
-                          onMouseDown={(e) =>
-                            handleLongPressStart(e, meal, dayIndex)
-                          }
-                          onMouseUp={handleLongPressEnd}
-                          onMouseLeave={handleLongPressEnd}
-                          onTouchStart={(e) =>
-                            handleLongPressStart(e, meal, dayIndex)
-                          }
-                          onTouchEnd={handleLongPressEnd}
-                          sx={{
-                            cursor: meal.isCustom ? "default" : "pointer",
-                            fontStyle: meal.isShadow ? "italic" : "normal",
-                            borderStyle: meal.isCustom ? "dashed" : "solid",
-                          }}
-                        />
-                      ))}
-                      <IconButton
-                        size="small"
-                        className="no-print"
-                        onClick={() =>
-                          setAddDialog({ dayOfWeek: dayIndex, mealType })
-                        }
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          border: 1,
-                          borderColor: "divider",
-                          borderStyle: "dashed",
-                        }}
-                      >
-                        <Add fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        className="no-print"
-                        title={t("planner.randomRecipe")}
-                        onClick={() => {
-                          const available = getRecipesForMealType(mealType);
-                          if (available.length === 0) return;
-                          const pick = available[Math.floor(Math.random() * available.length)];
-                          addMeal(planData!.plan.id, dayIndex, mealType, pick.recipe.id).then(() =>
-                            queryClient.invalidateQueries({ queryKey: ["plan", weekStart] }),
-                          );
-                        }}
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          border: 1,
-                          borderColor: "divider",
-                          borderStyle: "dashed",
-                        }}
-                      >
-                        <Casino fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                );
-              })}
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-
-      {/* Add meal dialog — searchable */}
-      <Dialog
-        open={!!addDialog}
-        onClose={() => {
-          setAddDialog(null);
-          setRecipeSearch("");
-          setIsShadowMode(false);
-          setCustomMealName("");
-        }}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          {t("planner.addMeal")}
-          <IconButton
-            size="small"
-            onClick={() => {
-              setAddDialog(null);
-              setRecipeSearch("");
-              setIsShadowMode(false);
-              setCustomMealName("");
-            }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ px: 2, pt: 0 }}>
-          <TextField
-            fullWidth
-            placeholder={t("planner.searchRecipes")}
-            value={recipeSearch}
-            onChange={(e) => setRecipeSearch(e.target.value)}
-            size="small"
-            autoFocus
-            sx={{ mb: 1 }}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isShadowMode}
-                onChange={(e) => setIsShadowMode(e.target.checked)}
-                size="small"
-              />
-            }
-            label={
-              <Typography variant="body2" color="text.secondary">
-                {t("planner.shadowCopy")}
-              </Typography>
-            }
-            sx={{ mb: 1 }}
-          />
-          {!filteredRecipes.length ? (
-            <Typography sx={{ py: 2 }} color="text.secondary" align="center">
-              {t("recipes.empty")}
-            </Typography>
-          ) : (
-            <List disablePadding>
-              {filteredRecipes.map(({ recipe }) => (
-                <ListItemButton
-                  key={recipe.id}
-                  onClick={() => addMutation.mutate(recipe.id)}
-                  disabled={addMutation.isPending}
-                >
-                  <ListItemText primary={recipe.name} />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-
-          {/* Custom meal input */}
-          <Box sx={{ pt: 2, mt: 1, borderTop: 1, borderColor: "divider" }}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-              {t("planner.customMeal")}
-            </Typography>
-            <Box display="flex" gap={1}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder={t("planner.customMealPlaceholder")}
-                value={customMealName}
-                onChange={(e) => setCustomMealName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && customMealName.trim()) {
-                    e.preventDefault();
-                    customMealMutation.mutate(customMealName.trim());
+      <div className="fp-planner-days">
+        {days.map((d, dayIdx) => {
+          const visibleSlots =
+            filter === "unassigned"
+              ? SLOTS.filter((s) => getMealsForSlot(dayIdx, s).length === 0)
+              : SLOTS;
+          if (filter === "unassigned" && visibleSlots.length === 0) return null;
+          return (
+            <div
+              key={dayIdx}
+              className={`fp-day ${d.isToday ? "is-today" : ""} ${d.isPast ? "is-past" : ""}`}
+            >
+              <div className="fp-day-head">
+                <span className="fp-day-name display">{d.name}</span>
+                <span className="fp-day-date">{d.date}</span>
+                {d.isToday && <span className="fp-day-today">{t("planner.today")}</span>}
+                {d.isPast && !d.isToday && (
+                  <span className="fp-day-past">{t("planner.past")}</span>
+                )}
+              </div>
+              {visibleSlots.map((slot) => (
+                <MealRow
+                  key={slot}
+                  slot={slot}
+                  meals={getMealsForSlot(dayIdx, slot)}
+                  onMealClick={(_a, meal) => {
+                    if (meal.recipeId) navigate(`/recipes/${meal.recipeId}`);
+                  }}
+                  onMealLongPress={(anchor, meal) =>
+                    setActionAnchor({ anchor, meal, dayOfWeek: dayIdx })
                   }
-                }}
-                disabled={customMealMutation.isPending}
-              />
-              <IconButton
-                color="primary"
-                onClick={() => customMealMutation.mutate(customMealName.trim())}
-                disabled={!customMealName.trim() || customMealMutation.isPending}
-              >
-                <Add />
-              </IconButton>
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
+                  onRemove={(meal) => removeMutation.mutate(meal)}
+                  onAdd={(anchor) =>
+                    setAddAnchor({ anchor, dayOfWeek: dayIdx, slot })
+                  }
+                  onDice={(anchor) => handleDice(anchor, dayIdx, slot)}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* Schedule menu — long press on meal chip */}
-      <Menu
-        anchorEl={scheduleMenu?.anchorEl}
-        open={!!scheduleMenu}
-        onClose={() => setScheduleMenu(null)}
-      >
-        <MenuItem disabled sx={{ opacity: "1 !important" }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            {t("planner.scheduleTitle", {
-              name: scheduleMenu?.meal.recipeName,
-            })}
-          </Typography>
-        </MenuItem>
-        <MenuItem
-          onClick={() =>
-            handleSchedule(
-              sameDayNextWeek(weekStart, scheduleMenu!.dayOfWeek),
-            )
+      {plannedCount === 0 && filter === "all" && (
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-mark">
+            <Icon.Leaf />
+          </div>
+          <div className="fp-emptystate-title">
+            {t("planner.emptyTitle", { label: `${lbl.head.toLowerCase()} ${lbl.tail}` })}
+          </div>
+          <div className="fp-emptystate-sub">{t("planner.emptySub")}</div>
+        </div>
+      )}
+
+      {addAnchor && recipes && (
+        <AddPicker
+          anchor={addAnchor.anchor}
+          slot={addAnchor.slot}
+          dayName={days[addAnchor.dayOfWeek].name}
+          recipes={recipes}
+          onPick={handlePickRecipe}
+          onPickCustom={handlePickCustom}
+          onCreateNew={handleCreateNew}
+          onClose={() => setAddAnchor(null)}
+        />
+      )}
+
+      {actionAnchor && (
+        <MealActionsPopover
+          anchor={actionAnchor.anchor}
+          meal={actionAnchor.meal}
+          onClose={() => setActionAnchor(null)}
+          onCopyNextWeek={handleCopyNextWeek}
+          onCopyRandomNextWeek={() =>
+            handleScheduleRandom(7, 13, t("planner.randomNextWeek"))
           }
-        >
-          <ListItemIcon>
-            <Today fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("planner.sameDayNextWeek")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleSchedule(randomDateInRange(7, 13))}>
-          <ListItemIcon>
-            <Shuffle fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("planner.randomNextWeek")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleSchedule(randomDateInRange(14, 20))}>
-          <ListItemIcon>
-            <Shuffle fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("planner.randomWeekAfter")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleSchedule(randomDateInRange(1, 30))}>
-          <ListItemIcon>
-            <CalendarMonth fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("planner.random30Days")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleSchedule(randomDateInRange(1, 180))}>
-          <ListItemIcon>
-            <CalendarMonth fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("planner.random6Months")}</ListItemText>
-        </MenuItem>
-      </Menu>
-    </Box>
+          onCopyRandom30Days={() =>
+            handleScheduleRandom(1, 30, t("planner.random30Days"))
+          }
+          onCopyRandom6Months={() =>
+            handleScheduleRandom(1, 180, t("planner.random6Months"))
+          }
+          onOpenRecipe={() => {
+            if (actionAnchor.meal.recipeId)
+              navigate(`/recipes/${actionAnchor.meal.recipeId}`);
+          }}
+          onRemove={() => removeMutation.mutate(actionAnchor.meal)}
+        />
+      )}
+
+      {diceAnchor && (
+        <DicePop
+          anchor={diceAnchor.anchor}
+          slot={diceAnchor.slot}
+          suggested={diceAnchor.suggested}
+          libraryCount={recipes?.length ?? 0}
+          onAccept={handleDiceAccept}
+          onReroll={handleDiceReroll}
+          onClose={() => setDiceAnchor(null)}
+        />
+      )}
+
+      {toast && <div className="fp-toast">{toast}</div>}
+    </div>
   );
 }

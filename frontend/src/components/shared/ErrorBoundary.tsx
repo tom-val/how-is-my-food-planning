@@ -1,6 +1,6 @@
 import { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Icon } from "../sage/Icon";
 
 interface Props {
   children: ReactNode;
@@ -27,31 +27,40 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          minHeight="50vh"
-          gap={2}
-          p={3}
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            background: "var(--cream)",
+          }}
         >
-          <Typography variant="h5" fontWeight={600}>
-            Something went wrong
-          </Typography>
-          <Typography color="text.secondary" align="center">
-            An unexpected error occurred. Please try reloading the page.
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => {
-              this.setState({ hasError: false });
-              window.location.reload();
-            }}
-          >
-            Reload
-          </Button>
-        </Box>
+          <div className="fp-emptystate" style={{ maxWidth: 460 }}>
+            <div className="fp-emptystate-mark">
+              <Icon.Leaf />
+            </div>
+            <div className="fp-emptystate-title">Something went wrong</div>
+            <div
+              className="fp-emptystate-sub"
+              style={{ display: "block", marginBottom: 18 }}
+            >
+              An unexpected error occurred. Please try reloading the page.
+            </div>
+            <button
+              type="button"
+              className="fp-btn fp-btn-primary"
+              onClick={() => {
+                this.setState({ hasError: false });
+                window.location.reload();
+              }}
+            >
+              <Icon.Refresh />
+              Reload
+            </button>
+          </div>
+        </div>
       );
     }
 

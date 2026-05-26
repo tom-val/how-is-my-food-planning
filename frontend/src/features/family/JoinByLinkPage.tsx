@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Container, Paper, Typography, CircularProgress, Alert, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 import { joinFamily } from "../../api/familyApi";
+import { Spinner } from "../../components/sage/Spinner";
+import { Icon } from "../../components/sage/Icon";
 
 export default function JoinByLinkPage() {
   const { t } = useTranslation();
@@ -32,40 +33,52 @@ export default function JoinByLinkPage() {
 
   if (!code) {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="h5" gutterBottom>
-            {t("family.invalidLink")}
-          </Typography>
-          <Button variant="contained" onClick={() => navigate("/family")} sx={{ mt: 2 }}>
-            {t("family.goToFamily")}
-          </Button>
-        </Paper>
-      </Container>
+      <div className="fp-main-narrow">
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-mark">
+            <Icon.X />
+          </div>
+          <div className="fp-emptystate-title">{t("family.invalidLink")}</div>
+          <div className="fp-emptystate-sub" style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              className="fp-btn fp-btn-primary"
+              onClick={() => navigate("/family")}
+            >
+              {t("family.goToFamily")}
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (joinMutation.isPending) {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8, textAlign: "center" }}>
-        <CircularProgress />
-        <Typography sx={{ mt: 2 }}>{t("family.joining")}</Typography>
-      </Container>
+      <div className="fp-main-narrow" style={{ textAlign: "center", paddingTop: 60 }}>
+        <Spinner />
+        <p style={{ color: "var(--muted)", marginTop: 12 }}>
+          {t("family.joining")}
+        </p>
+      </div>
     );
   }
 
   if (joinMutation.isError) {
     return (
-      <Container maxWidth="xs" sx={{ mt: 8 }}>
-        <Paper sx={{ p: 4 }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {joinMutation.error.message}
-          </Alert>
-          <Button variant="contained" fullWidth onClick={() => navigate("/family")}>
-            {t("family.goToFamily")}
-          </Button>
-        </Paper>
-      </Container>
+      <div className="fp-main-narrow">
+        <div className="fp-alert fp-alert-error">
+          {joinMutation.error.message}
+        </div>
+        <button
+          type="button"
+          className="fp-btn fp-btn-primary"
+          style={{ width: "100%", justifyContent: "center" }}
+          onClick={() => navigate("/family")}
+        >
+          {t("family.goToFamily")}
+        </button>
+      </div>
     );
   }
 

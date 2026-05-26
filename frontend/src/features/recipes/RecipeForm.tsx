@@ -1,22 +1,12 @@
 import { useState } from "react";
-import {
-  TextField,
-  Button,
-  Box,
-  Typography,
-  IconButton,
-  Paper,
-  Autocomplete,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import type { IngredientInput } from "../../api/recipeApi";
 import { listIngredientNames } from "../../api/recipeApi";
+import { Icon } from "../../components/sage/Icon";
+import { MEAL_META, MEAL_TYPES, type MealType } from "../../components/sage/mealMeta";
 
-const CATEGORY_OPTIONS = ["breakfast", "lunch", "dinner", "snack"] as const;
+const UNITS = ["", "g", "kg", "ml", "l", "vnt", "v.š.", "a.š.", "rieks.", "sk."];
 
 interface RecipeFormProps {
   initialName?: string;
@@ -30,7 +20,8 @@ interface RecipeFormProps {
     ingredients: IngredientInput[],
   ) => void;
   isSubmitting: boolean;
-  submitLabel: string;
+  isEdit?: boolean;
+  onCancel: () => void;
 }
 
 const emptyIngredient = (): IngredientInput => ({
@@ -46,7 +37,8 @@ export function RecipeForm({
   initialIngredients,
   onSubmit,
   isSubmitting,
-  submitLabel,
+  isEdit = false,
+  onCancel,
 }: RecipeFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(initialName);
@@ -61,14 +53,15 @@ export function RecipeForm({
     queryFn: listIngredientNames,
   });
 
-  const updateIngredient = (
-    index: number,
-    field: keyof IngredientInput,
-    value: string,
-  ) => {
+  const toggleCategory = (c: MealType) =>
+    setCategories((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+    );
+
+  const updateIng = (idx: number, field: keyof IngredientInput, value: string) => {
     setIngredients((prev) =>
       prev.map((ing, i) => {
-        if (i !== index) return ing;
+        if (i !== idx) return ing;
         if (field === "quantity") {
           return { ...ing, quantity: value === "" ? null : Number(value) };
         }
@@ -77,127 +70,189 @@ export function RecipeForm({
     );
   };
 
+  const removeIng = (idx: number) =>
+    setIngredients((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== idx),
+    );
+
+  const addIng = () => setIngredients((prev) => [...prev, emptyIngredient()]);
+
+  const validIngredients = ingredients.filter((i) => (i.name ?? "").trim() !== "");
+  const valid = name.trim() !== "" && validIngredients.length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validIngredients = ingredients.filter((i) => i.name.trim() !== "");
-    if (validIngredients.length === 0) return;
-    onSubmit(name, instructions || null, categories, validIngredients);
+    if (!valid) return;
+    onSubmit(name.trim(), instructions || null, categories, validIngredients);
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <TextField
-        fullWidth
-        label={t("recipes.name")}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        margin="normal"
-        required
-      />
+    <div className="fp-main-narrow">
+      <div className="fp-page-head">
+        <div>
+          <div className="fp-page-eyebrow">
+            {isEdit ? t("recipes.editRecipeEyebrow") : t("recipes.newRecipeEyebrow")}
+          </div>
+          <h1>
+            {isEdit ? t("recipes.editRecipeHeader") : t("recipes.newRecipeHeader")}{" "}
+            <em>{t("recipes.recipeNoun")}</em>
+          </h1>
+          <div className="fp-page-sub">{t("recipes.recipeFormSubtitle")}</div>
+        </div>
+        <button type="button" className="fp-btn fp-btn-ghost" onClick={onCancel}>
+          <Icon.X />
+          {t("common.cancel")}
+        </button>
+      </div>
 
-      <Box sx={{ mt: 1, mb: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-          {t("recipes.categories")}
-        </Typography>
-        <ToggleButtonGroup
-          value={categories}
-          onChange={(_e, val) => setCategories(val)}
-          size="small"
-        >
-          {CATEGORY_OPTIONS.map((cat) => (
-            <ToggleButton key={cat} value={cat}>
-              {t(`planner.${cat}`)}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-          {t("recipes.categoriesHint")}
-        </Typography>
-      </Box>
-      <TextField
-        fullWidth
-        label={t("recipes.instructions")}
-        value={instructions}
-        onChange={(e) => setInstructions(e.target.value)}
-        margin="normal"
-        multiline
-        minRows={3}
-      />
+      <form className="fp-form" onSubmit={handleSubmit}>
+        <div className="fp-field">
+          <label className="fp-field-label">
+            {t("recipes.name")} <span className="fp-field-req">{t("recipes.required")}</span>
+          </label>
+          <input
+            className="fp-input fp-input-lg"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("recipes.namePlaceholder")}
+            autoFocus
+          />
+        </div>
 
-      <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-        {t("recipes.ingredients")}
-      </Typography>
+        <div className="fp-field">
+          <label className="fp-field-label">
+            {t("recipes.categories")}{" "}
+            <span className="fp-field-hint">{t("recipes.categoriesHint")}</span>
+          </label>
+          <div className="fp-mealchoice">
+            {MEAL_TYPES.map((mt) => {
+              const meta = MEAL_META[mt];
+              const Ico = meta.icon;
+              const active = categories.includes(mt);
+              return (
+                <button
+                  type="button"
+                  key={mt}
+                  className={`fp-mealchoice-btn ${active ? "is-active" : ""}`}
+                  style={
+                    active
+                      ? ({
+                          "--c-bg": meta.bg,
+                          "--c-ink": meta.ink,
+                        } as React.CSSProperties)
+                      : undefined
+                  }
+                  onClick={() => toggleCategory(mt)}
+                >
+                  <span className="fp-mealchoice-ico">
+                    <Ico />
+                  </span>
+                  <span>{t(`planner.${mt}`)}</span>
+                  {active && (
+                    <span className="fp-mealchoice-check">
+                      <Icon.Check />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-      {ingredients.map((ingredient, index) => (
-        <Paper
-          key={index}
-          variant="outlined"
-          sx={{ p: 1.5, mb: 1, display: "flex", gap: 1, alignItems: "center" }}
-        >
-          <Autocomplete
-            freeSolo
-            options={knownIngredients}
-            value={ingredient.name}
-            onInputChange={(_e, value) =>
-              updateIngredient(index, "name", value)
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t("recipes.ingredientName")}
-                size="small"
-                required
-              />
-            )}
-            sx={{ flex: 2 }}
+        <div className="fp-field">
+          <label className="fp-field-label">
+            {t("recipes.ingredients")}{" "}
+            <span className="fp-field-hint">
+              {t("recipes.addedSummary", { n: validIngredients.length })}
+            </span>
+          </label>
+          <div className="fp-ing-list">
+            {ingredients.map((ing, idx) => (
+              <div className="fp-ing-row" key={idx}>
+                <span className="fp-ing-handle" aria-hidden>
+                  {idx + 1}
+                </span>
+                <input
+                  className="fp-input fp-ing-name"
+                  placeholder={idx === 0 ? t("recipes.ingredientPlaceholder") : t("recipes.ingredientName")}
+                  value={ing.name}
+                  onChange={(e) => updateIng(idx, "name", e.target.value)}
+                  list="known-ingredients"
+                />
+                <input
+                  className="fp-input fp-ing-qty"
+                  placeholder={t("recipes.quantity")}
+                  type="number"
+                  step="any"
+                  min={0}
+                  value={ing.quantity ?? ""}
+                  onChange={(e) => updateIng(idx, "quantity", e.target.value)}
+                />
+                <select
+                  className="fp-input fp-ing-unit"
+                  value={ing.unit ?? ""}
+                  onChange={(e) => updateIng(idx, "unit", e.target.value)}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u || t("recipes.unit").toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="fp-ing-remove"
+                  onClick={() => removeIng(idx)}
+                  disabled={ingredients.length === 1}
+                  aria-label={t("common.remove")}
+                >
+                  <Icon.Trash />
+                </button>
+              </div>
+            ))}
+          </div>
+          <datalist id="known-ingredients">
+            {knownIngredients.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
+          <button type="button" className="fp-add-row" onClick={addIng}>
+            <Icon.Plus />
+            {t("recipes.addIngredient")}
+          </button>
+        </div>
+
+        <div className="fp-field">
+          <label className="fp-field-label">
+            {t("recipes.instructions")}{" "}
+            <span className="fp-field-hint">{t("recipes.instructionsHint")}</span>
+          </label>
+          <textarea
+            className="fp-input fp-textarea"
+            rows={5}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            placeholder={t("recipes.instructionsPlaceholder")}
           />
-          <TextField
-            label={t("recipes.quantity")}
-            value={ingredient.quantity ?? ""}
-            onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
-            size="small"
-            type="number"
-            inputProps={{ step: "any", min: 0 }}
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            label={t("recipes.unit")}
-            value={ingredient.unit ?? ""}
-            onChange={(e) => updateIngredient(index, "unit", e.target.value)}
-            size="small"
-            sx={{ flex: 1 }}
-          />
-          <IconButton
-            onClick={() =>
-              setIngredients((prev) => prev.filter((_, i) => i !== index))
-            }
-            disabled={ingredients.length <= 1}
-            size="small"
+        </div>
+
+        <div className="fp-form-foot">
+          <button type="button" className="fp-btn fp-btn-ghost" onClick={onCancel}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            className="fp-btn fp-btn-primary"
+            disabled={!valid || isSubmitting}
           >
-            <Delete />
-          </IconButton>
-        </Paper>
-      ))}
-
-      <Button
-        startIcon={<Add />}
-        onClick={() => setIngredients((prev) => [...prev, emptyIngredient()])}
-        sx={{ mb: 2 }}
-      >
-        {t("recipes.addIngredient")}
-      </Button>
-
-      <Box sx={{ mb: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          disabled={isSubmitting}
-          fullWidth
-        >
-          {submitLabel}
-        </Button>
-      </Box>
-    </Box>
+            <Icon.Check />
+            {isEdit ? t("recipes.saveChanges") : t("recipes.saveRecipe")}
+          </button>
+        </div>
+        {!valid && (
+          <div className="fp-form-hint">{t("recipes.formMissingHint")}</div>
+        )}
+      </form>
+    </div>
   );
 }

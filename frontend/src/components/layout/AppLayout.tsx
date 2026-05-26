@@ -1,47 +1,33 @@
+import { useState, type ReactNode } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  BottomNavigation,
-  BottomNavigationAction,
-  IconButton,
-  useMediaQuery,
-  useTheme,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Avatar,
-  Chip,
-  alpha,
-} from "@mui/material";
-import {
-  CalendarMonth,
-  MenuBook,
-  ShoppingCart,
-  People,
-  Logout,
-  Restaurant,
-} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
-import { LanguageSwitcher } from "../shared/LanguageSwitcher";
+import { Icon } from "../sage/Icon";
+import { Popover } from "../sage/Popover";
+import { useMobile } from "../sage/useMobile";
 
-const DRAWER_WIDTH = 240;
-
-const navItems = [
-  { path: "/planner", labelKey: "nav.planner", icon: <CalendarMonth /> },
-  { path: "/recipes", labelKey: "nav.recipes", icon: <MenuBook /> },
-  { path: "/shopping", labelKey: "nav.shopping", icon: <ShoppingCart /> },
-  { path: "/family", labelKey: "nav.family", icon: <People /> },
+const LANGUAGES = [
+  { code: "lt", flag: "🇱🇹", native: "Lietuvių", en: "Lithuanian" },
+  { code: "en", flag: "🇬🇧", native: "English", en: "English" },
 ];
 
-function getInitials(name: string): string {
+interface NavItem {
+  path: string;
+  labelKey: string;
+  icon: () => ReactNode;
+  matchPrefixes?: string[];
+}
+
+const NAV: NavItem[] = [
+  { path: "/planner", labelKey: "nav.planner", icon: Icon.Calendar },
+  { path: "/recipes", labelKey: "nav.recipes", icon: Icon.Book },
+  { path: "/shopping", labelKey: "nav.shopping", icon: Icon.Cart },
+  { path: "/family", labelKey: "nav.family", icon: Icon.Users, matchPrefixes: ["/family", "/join"] },
+];
+
+function initials(name: string): string {
   return name
-    .split(" ")
+    .split(/\s+/)
     .map((w) => w[0])
     .join("")
     .toUpperCase()
@@ -49,128 +35,193 @@ function getInitials(name: string): string {
 }
 
 export function AppLayout() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMobile();
 
-  const currentNavIndex = navItems.findIndex((item) =>
-    location.pathname.startsWith(item.path),
-  );
+  const [langAnchor, setLangAnchor] = useState<HTMLElement | null>(null);
+  const [userAnchor, setUserAnchor] = useState<HTMLElement | null>(null);
+
+  const isActive = (n: NavItem) => {
+    const prefixes = n.matchPrefixes ?? [n.path];
+    return prefixes.some((p) => location.pathname.startsWith(p));
+  };
+
+  const displayName = user?.displayName ?? "";
+  const userInitials = displayName ? initials(displayName) : "?";
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      <AppBar
-        position="fixed"
-        sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}
-      >
-        <Toolbar>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
-            <Restaurant />
-            <Typography variant="h6" noWrap fontWeight={700}>
-              {t("app.title")}
-            </Typography>
-          </Box>
-
-          {user && (
-            <Chip
-              avatar={
-                <Avatar sx={{ bgcolor: "primary.dark", width: 28, height: 28, fontSize: "0.75rem" }}>
-                  {getInitials(user.displayName)}
-                </Avatar>
-              }
-              label={user.displayName}
-              variant="outlined"
-              size="small"
-              sx={{
-                mr: 1,
-                color: "inherit",
-                borderColor: (t) => alpha(t.palette.common.white, 0.3),
-                "& .MuiChip-avatar": { color: "white" },
-              }}
-            />
+    <div className={`fp-app ${isMobile ? "is-mobile" : ""}`}>
+      <header className="fp-header">
+        <div
+          className="fp-brand"
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate("/planner")}
+        >
+          <span className="fp-brand-mark">
+            <Icon.Leaf />
+          </span>
+          <span>
+            Food<b> Planning</b>
+          </span>
+        </div>
+        <div className="fp-header-right">
+          {!isMobile && (
+            <button
+              type="button"
+              className="fp-user-chip"
+              onClick={(e) => setUserAnchor(e.currentTarget)}
+            >
+              <span className="fp-user-avatar">{userInitials}</span>
+              {displayName}
+            </button>
           )}
-          <LanguageSwitcher />
-          <IconButton color="inherit" onClick={signOut} title={t("auth.signOut")} size="small">
-            <Logout fontSize="small" />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      <Toolbar />
-
-      <Box sx={{ display: "flex", flexGrow: 1 }}>
-        {!isMobile && (
-          <Drawer
-            variant="permanent"
-            sx={{
-              width: DRAWER_WIDTH,
-              flexShrink: 0,
-              "& .MuiDrawer-paper": {
-                width: DRAWER_WIDTH,
-                boxSizing: "border-box",
-              },
-            }}
+          {isMobile && (
+            <button
+              type="button"
+              className="fp-icon-btn"
+              onClick={(e) => setUserAnchor(e.currentTarget)}
+              aria-label="Account"
+            >
+              <span className="fp-user-avatar" style={{ width: 24, height: 24, fontSize: 11 }}>
+                {userInitials}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="fp-icon-btn"
+            onClick={(e) => setLangAnchor(e.currentTarget)}
+            aria-label="Language"
           >
-            <Toolbar />
-            <List sx={{ px: 1, pt: 1 }}>
-              {navItems.map((item) => (
-                <ListItemButton
-                  key={item.path}
-                  selected={location.pathname.startsWith(item.path)}
-                  onClick={() => navigate(item.path)}
+            <Icon.Globe />
+          </button>
+          <button
+            type="button"
+            className="fp-icon-btn"
+            onClick={signOut}
+            aria-label={t("auth.signOut")}
+            title={t("auth.signOut")}
+          >
+            <Icon.Logout />
+          </button>
+        </div>
+      </header>
+
+      <div className="fp-body">
+        {!isMobile && (
+          <aside className="fp-sidenav">
+            {NAV.map((n) => {
+              const I = n.icon;
+              return (
+                <button
+                  key={n.path}
+                  type="button"
+                  className={`fp-nav-item ${isActive(n) ? "is-active" : ""}`}
+                  onClick={() => navigate(n.path)}
                 >
-                  <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={t(item.labelKey)}
-                    primaryTypographyProps={{ fontWeight: 500 }}
-                  />
-                </ListItemButton>
-              ))}
-            </List>
-          </Drawer>
+                  <I />
+                  <span>{t(n.labelKey)}</span>
+                </button>
+              );
+            })}
+            <div className="fp-nav-spacer" />
+          </aside>
         )}
 
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            pt: { xs: 2, md: 3 },
-            px: { xs: 2, md: 3 },
-            pb: { xs: 14, md: 3 },
-            maxWidth: 900,
-            mx: "auto",
-            width: "100%",
-          }}
-        >
+        <main className="fp-main">
           <Outlet />
-        </Box>
-      </Box>
+        </main>
+      </div>
 
       {isMobile && (
-        <BottomNavigation
-          value={currentNavIndex}
-          onChange={(_, newValue) => navigate(navItems[newValue].path)}
-          showLabels
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: theme.zIndex.appBar,
-          }}
-        >
-          {navItems.map((item) => (
-            <BottomNavigationAction
-              key={item.path}
-              label={t(item.labelKey)}
-              icon={item.icon}
-            />
-          ))}
-        </BottomNavigation>
+        <nav className="fp-bottomnav">
+          {NAV.map((n) => {
+            const I = n.icon;
+            return (
+              <button
+                key={n.path}
+                type="button"
+                className={`fp-bottomnav-item ${isActive(n) ? "is-active" : ""}`}
+                onClick={() => navigate(n.path)}
+              >
+                <I />
+                <span>{t(n.labelKey)}</span>
+              </button>
+            );
+          })}
+        </nav>
       )}
-    </Box>
+
+      {langAnchor && (
+        <Popover
+          anchor={langAnchor}
+          onClose={() => setLangAnchor(null)}
+          className="fp-lang-popover"
+        >
+          <div className="fp-lang-popover-title">{t("lang.title")}</div>
+          <div className="fp-lang-grid">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                className={`fp-lang-btn ${i18n.language?.startsWith(l.code) ? "is-active" : ""}`}
+                onClick={() => {
+                  void i18n.changeLanguage(l.code);
+                  setLangAnchor(null);
+                }}
+              >
+                <div className="fp-lang-row">
+                  <span className="fp-lang-flag">{l.flag}</span>
+                  <span className="fp-lang-en">{l.en}</span>
+                </div>
+                <span className="fp-lang-native">{l.native}</span>
+              </button>
+            ))}
+          </div>
+        </Popover>
+      )}
+
+      {userAnchor && (
+        <Popover
+          anchor={userAnchor}
+          onClose={() => setUserAnchor(null)}
+          className="fp-user-popover"
+        >
+          <div className="fp-user-popover-head">
+            <span className="fp-user-avatar">{userInitials}</span>
+            <div>
+              <div className="fp-user-popover-name">{displayName}</div>
+              <div className="fp-user-popover-email">{user?.email}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="fp-popover-item"
+            onClick={() => {
+              setUserAnchor(null);
+              navigate("/family");
+            }}
+          >
+            <Icon.Users />
+            {t("user.switchFamily")}
+          </button>
+          <div className="fp-popover-divider" />
+          <button
+            type="button"
+            className="fp-popover-item is-danger"
+            onClick={() => {
+              setUserAnchor(null);
+              signOut();
+            }}
+          >
+            <Icon.Logout />
+            {t("auth.signOut")}
+          </button>
+        </Popover>
+      )}
+    </div>
   );
 }

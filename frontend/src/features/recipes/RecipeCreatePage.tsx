@@ -1,12 +1,15 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Typography, Box, Button } from "@mui/material";
-import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createRecipe } from "../../api/recipeApi";
 import { RecipeForm } from "./RecipeForm";
 import type { AiSuggestedRecipe, IngredientInput } from "../../api/recipeApi";
+
+interface LocationState {
+  aiRecipe?: AiSuggestedRecipe;
+  prefilledName?: string | null;
+}
 
 export default function RecipeCreatePage() {
   const { t } = useTranslation();
@@ -15,7 +18,9 @@ export default function RecipeCreatePage() {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const aiRecipe = (location.state as { aiRecipe?: AiSuggestedRecipe } | null)?.aiRecipe;
+  const state = location.state as LocationState | null;
+  const aiRecipe = state?.aiRecipe;
+  const prefilledName = state?.prefilledName;
 
   const mutation = useMutation({
     mutationFn: ({
@@ -37,28 +42,16 @@ export default function RecipeCreatePage() {
   });
 
   return (
-    <Box maxWidth={600} mx="auto">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h4">{t("recipes.create")}</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Close />}
-          onClick={() => navigate("/recipes")}
-        >
-          {t("common.cancel")}
-        </Button>
-      </Box>
-      <RecipeForm
-        initialName={aiRecipe?.name}
-        initialInstructions={aiRecipe?.instructions}
-        initialCategories={aiRecipe?.categories}
-        initialIngredients={aiRecipe?.ingredients}
-        onSubmit={(name, instructions, categories, ingredients) =>
-          mutation.mutate({ name, instructions, categories, ingredients })
-        }
-        isSubmitting={mutation.isPending}
-        submitLabel={t("common.save")}
-      />
-    </Box>
+    <RecipeForm
+      initialName={aiRecipe?.name ?? prefilledName ?? ""}
+      initialInstructions={aiRecipe?.instructions}
+      initialCategories={aiRecipe?.categories}
+      initialIngredients={aiRecipe?.ingredients}
+      onSubmit={(name, instructions, categories, ingredients) =>
+        mutation.mutate({ name, instructions, categories, ingredients })
+      }
+      isSubmitting={mutation.isPending}
+      onCancel={() => navigate("/recipes")}
+    />
   );
 }

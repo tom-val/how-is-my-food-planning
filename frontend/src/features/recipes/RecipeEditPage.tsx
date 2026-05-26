@@ -1,11 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { Typography, Box, CircularProgress, Button } from "@mui/material";
-import { Close } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRecipe, updateRecipe } from "../../api/recipeApi";
 import { RecipeForm } from "./RecipeForm";
+import { Spinner } from "../../components/sage/Spinner";
 import type { IngredientInput } from "../../api/recipeApi";
 
 export default function RecipeEditPage() {
@@ -40,45 +39,33 @@ export default function RecipeEditPage() {
     },
   });
 
-  if (isLoading) {
+  if (isLoading) return <Spinner />;
+  if (!data) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
+      <div className="fp-main-narrow">
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-title">{t("recipes.notFound")}</div>
+        </div>
+      </div>
     );
   }
 
-  if (!data) {
-    return <Typography>{t("recipes.notFound")}</Typography>;
-  }
-
   return (
-    <Box maxWidth={600} mx="auto">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h4">{t("common.edit")}</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Close />}
-          onClick={() => navigate(`/recipes/${id}`)}
-        >
-          {t("common.cancel")}
-        </Button>
-      </Box>
-      <RecipeForm
-        initialName={data.recipe.name}
-        initialInstructions={data.recipe.instructions}
-        initialCategories={data.recipe.categories}
-        initialIngredients={data.ingredients.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          unit: i.unit,
-        }))}
-        onSubmit={(name, instructions, categories, ingredients) =>
-          mutation.mutate({ name, instructions, categories, ingredients })
-        }
-        isSubmitting={mutation.isPending}
-        submitLabel={t("common.save")}
-      />
-    </Box>
+    <RecipeForm
+      isEdit
+      initialName={data.recipe.name}
+      initialInstructions={data.recipe.instructions}
+      initialCategories={data.recipe.categories}
+      initialIngredients={data.ingredients.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unit: i.unit,
+      }))}
+      onSubmit={(name, instructions, categories, ingredients) =>
+        mutation.mutate({ name, instructions, categories, ingredients })
+      }
+      isSubmitting={mutation.isPending}
+      onCancel={() => navigate(`/recipes/${id}`)}
+    />
   );
 }

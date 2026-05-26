@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  Link,
-} from "@mui/material";
 import { useTranslation } from "react-i18next";
-import {
-  CognitoUser,
-} from "amazon-cognito-identity-js";
+import { CognitoUser } from "amazon-cognito-identity-js";
 import { getCognitoUserPool } from "../../providers/AuthProvider";
 import { AuthPageLayout } from "./AuthPageLayout";
+import { Icon } from "../../components/sage/Icon";
 
 type Stage = "requestCode" | "resetPassword" | "done";
+
+const heading = (text: string) => (
+  <h1
+    style={{
+      margin: "0 0 18px",
+      fontFamily: "var(--font-display)",
+      fontWeight: 400,
+      fontSize: 36,
+      letterSpacing: "-0.015em",
+      textAlign: "center",
+      color: "var(--ink)",
+    }}
+  >
+    {text}
+  </h1>
+);
 
 export default function ForgotPassword() {
   const { t } = useTranslation();
@@ -85,22 +90,23 @@ export default function ForgotPassword() {
   if (stage === "done") {
     return (
       <AuthPageLayout>
-        <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            {t("auth.passwordReset")}
-          </Typography>
-          <Typography align="center" sx={{ mb: 2 }}>
-            {t("auth.passwordResetSuccess")}
-          </Typography>
-          <Button
-            fullWidth
-            variant="contained"
-            component={RouterLink}
-            to="/login"
-          >
-            {t("auth.login")}
-          </Button>
-        </CardContent></Card>
+        {heading(t("auth.passwordReset"))}
+        <p
+          style={{
+            textAlign: "center",
+            color: "var(--muted)",
+            margin: "0 0 18px",
+          }}
+        >
+          {t("auth.passwordResetSuccess")}
+        </p>
+        <RouterLink
+          to="/login"
+          className="fp-btn fp-btn-primary"
+          style={{ justifyContent: "center", width: "100%" }}
+        >
+          {t("auth.login")}
+        </RouterLink>
       </AuthPageLayout>
     );
   }
@@ -108,89 +114,88 @@ export default function ForgotPassword() {
   if (stage === "resetPassword") {
     return (
       <AuthPageLayout>
-        <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            {t("auth.newPassword")}
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box component="form" onSubmit={handleResetPassword}>
-            <TextField
-              fullWidth
-              label={t("auth.confirmCode")}
+        {heading(t("auth.newPassword"))}
+        {error && <div className="fp-alert fp-alert-error">{error}</div>}
+        <form className="fp-form" onSubmit={handleResetPassword}>
+          <div className="fp-field">
+            <label className="fp-field-label" style={{ fontSize: 16 }}>
+              {t("auth.confirmCode")}
+            </label>
+            <input
+              className="fp-input"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              margin="normal"
               required
+              autoFocus
             />
-            <TextField
-              fullWidth
-              label={t("auth.newPassword")}
+          </div>
+          <div className="fp-field">
+            <label className="fp-field-label" style={{ fontSize: 16 }}>
+              {t("auth.newPassword")}
+            </label>
+            <input
+              className="fp-input"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              margin="normal"
               required
               autoComplete="new-password"
             />
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={isSubmitting}
-              sx={{ mt: 2 }}
-            >
-              {t("auth.resetPassword")}
-            </Button>
-          </Box>
-        </CardContent></Card>
+          </div>
+          <button
+            type="submit"
+            className="fp-btn fp-btn-primary"
+            disabled={isSubmitting}
+            style={{ justifyContent: "center" }}
+          >
+            <Icon.Check />
+            {t("auth.resetPassword")}
+          </button>
+        </form>
       </AuthPageLayout>
     );
   }
 
   return (
     <AuthPageLayout>
-      <Card><CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-        <Typography variant="h5" align="center" gutterBottom fontWeight={600}>
-          {t("auth.forgotPassword")}
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <Box component="form" onSubmit={handleRequestCode}>
-          <TextField
-            fullWidth
-            label={t("auth.email")}
+      {heading(t("auth.forgotPassword"))}
+      {error && <div className="fp-alert fp-alert-error">{error}</div>}
+      <form className="fp-form" onSubmit={handleRequestCode}>
+        <div className="fp-field">
+          <label className="fp-field-label" style={{ fontSize: 16 }}>
+            {t("auth.email")}
+          </label>
+          <input
+            className="fp-input"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            margin="normal"
             required
             autoComplete="email"
+            autoFocus
           />
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={isSubmitting}
-            sx={{ mt: 2 }}
-          >
-            {t("auth.sendCode")}
-          </Button>
-        </Box>
-        <Typography align="center" sx={{ mt: 2 }}>
-          <Link component={RouterLink} to="/login" variant="body2">
-            {t("auth.backToLogin")}
-          </Link>
-        </Typography>
-      </CardContent></Card>
+        </div>
+        <button
+          type="submit"
+          className="fp-btn fp-btn-primary"
+          disabled={isSubmitting}
+          style={{ justifyContent: "center" }}
+        >
+          {t("auth.sendCode")}
+        </button>
+      </form>
+      <div style={{ textAlign: "center", marginTop: 18 }}>
+        <RouterLink
+          to="/login"
+          style={{
+            color: "var(--sage-800)",
+            fontSize: 13,
+            textDecoration: "none",
+          }}
+        >
+          {t("auth.backToLogin")}
+        </RouterLink>
+      </div>
     </AuthPageLayout>
   );
 }

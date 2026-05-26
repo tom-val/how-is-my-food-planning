@@ -1,29 +1,22 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  Typography,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Chip,
-} from "@mui/material";
-import { Edit, Delete, ArrowBack } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRecipe, deleteRecipe } from "../../api/recipeApi";
+import { Icon } from "../../components/sage/Icon";
+import { Spinner } from "../../components/sage/Spinner";
+import { Modal } from "../../components/sage/Modal";
+
+function splitTitle(name: string): { head: string; tail: string } {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return { head: "", tail: parts[0] };
+  return { head: parts.slice(0, -1).join(" "), tail: parts.slice(-1)[0] };
+}
+
+function isUrl(text: string): boolean {
+  return /^https?:\/\//i.test(text.trim());
+}
 
 export default function RecipeDetailPage() {
   const { t } = useTranslation();
@@ -31,7 +24,7 @@ export default function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["recipes", id],
@@ -48,115 +41,143 @@ export default function RecipeDetailPage() {
     },
   });
 
-  if (isLoading) {
+  if (isLoading) return <Spinner />;
+  if (!data) {
     return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
+      <div className="fp-main-wide">
+        <div className="fp-emptystate">
+          <div className="fp-emptystate-title">{t("recipes.notFound")}</div>
+        </div>
+      </div>
     );
   }
 
-  if (!data) {
-    return <Typography>{t("recipes.notFound")}</Typography>;
-  }
-
   const { recipe, ingredients } = data;
+  const { head, tail } = splitTitle(recipe.name);
+  const instructionsIsLink = recipe.instructions && isUrl(recipe.instructions);
 
   return (
-    <Box maxWidth={600} mx="auto">
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => navigate("/recipes")}
-        sx={{ mb: 1 }}
-        size="small"
-      >
-        {t("recipes.title")}
-      </Button>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h4">{recipe.name}</Typography>
-        <Box display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<Edit />}
+    <div className="fp-main-wide">
+      <div className="fp-recipe-hero">
+        <div className="fp-recipe-hero-inner">
+          <button
+            type="button"
+            className="fp-recipe-hero-back"
+            onClick={() => navigate("/recipes")}
+          >
+            <Icon.ArrowLeft />
+            {t("recipes.backToAll")}
+          </button>
+          <h1>
+            {head && <>{head} </>}
+            <em>{tail}</em>
+          </h1>
+          <div className="fp-recipe-hero-tags">
+            {recipe.categories.map((c) => (
+              <span key={c} className="fp-recipe-meta-tag">
+                {t(`planner.${c}`)}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="fp-recipe-hero-actions">
+          <button
+            type="button"
+            className="fp-btn fp-btn-ghost"
             onClick={() => navigate(`/recipes/${id}/edit`)}
           >
+            <Icon.Edit />
             {t("common.edit")}
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Delete />}
-            onClick={() => setIsDeleteDialogOpen(true)}
+          </button>
+          <button
+            type="button"
+            className="fp-btn fp-btn-danger"
+            onClick={() => setDeleteOpen(true)}
           >
+            <Icon.Trash />
             {t("common.delete")}
-          </Button>
-        </Box>
-      </Box>
+          </button>
+        </div>
+      </div>
 
-      {recipe.categories.length > 0 && (
-        <Box display="flex" gap={0.5} mb={2}>
-          {recipe.categories.map((cat) => (
-            <Chip key={cat} label={t(`planner.${cat}`)} size="small" color="primary" variant="outlined" />
-          ))}
-        </Box>
+      <div className="fp-section-title">
+        {t("recipes.ingredients")} <span className="count">{ingredients.length}</span>
+      </div>
+      <div className="fp-ingredients">
+        {ingredients.map((ing) => (
+          <div className="fp-ingredient" key={ing.id}>
+            <span className="fp-ingredient-name">{ing.name}</span>
+            <span className="fp-ingredient-qty">{ing.quantity ?? "—"}</span>
+            <span className="fp-ingredient-unit">{ing.unit ?? ""}</span>
+          </div>
+        ))}
+      </div>
+
+      {recipe.instructions ? (
+        <>
+          <div className="fp-section-title">{t("recipes.instructions")}</div>
+          <div className="fp-instructions">
+            {instructionsIsLink ? (
+              <a
+                href={recipe.instructions}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon.External />
+                {recipe.instructions}
+              </a>
+            ) : (
+              recipe.instructions
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="fp-section-title">{t("recipes.method")}</div>
+          <div className="fp-instructions" style={{ color: "var(--muted)" }}>
+            <p style={{ margin: "0 0 10px" }}>{t("recipes.noIngredient")}</p>
+            <button
+              type="button"
+              className="fp-textbtn"
+              style={{ padding: "6px 10px" }}
+              onClick={() => navigate(`/recipes/${id}/edit`)}
+            >
+              <Icon.Plus />
+              {t("recipes.addLink")}
+            </button>
+          </div>
+        </>
       )}
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        {t("recipes.ingredients")} ({ingredients.length})
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 600 }}>{t("recipes.ingredientName")}</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="right">{t("recipes.quantity")}</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>{t("recipes.unit")}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {ingredients.map((ingredient) => (
-              <TableRow key={ingredient.id} sx={{ "&:last-child td": { border: 0 } }}>
-                <TableCell>{ingredient.name}</TableCell>
-                <TableCell align="right">{ingredient.quantity ?? "—"}</TableCell>
-                <TableCell>{ingredient.unit ?? ""}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {recipe.instructions && (
-        <Paper sx={{ p: 2, mt: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            {t("recipes.instructions")}
-          </Typography>
-          <Typography whiteSpace="pre-wrap">{recipe.instructions}</Typography>
-        </Paper>
-      )}
-
-      <Dialog
-        open={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title={t("recipes.deleteConfirmTitle")}
+        footer={
+          <>
+            <button
+              type="button"
+              className="fp-btn fp-btn-ghost"
+              onClick={() => setDeleteOpen(false)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="fp-btn fp-btn-danger"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+            >
+              <Icon.Trash />
+              {t("common.delete")}
+            </button>
+          </>
+        }
       >
-        <DialogTitle>{t("recipes.deleteConfirmTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t("recipes.deleteConfirmMessage", { name: recipe.name })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsDeleteDialogOpen(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            color="error"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {t("common.delete")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        <p style={{ margin: 0, color: "var(--muted)" }}>
+          {t("recipes.deleteConfirmMessage", { name: recipe.name })}
+        </p>
+      </Modal>
+    </div>
   );
 }

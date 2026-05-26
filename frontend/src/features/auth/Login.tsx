@@ -1,19 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  Link,
-  Divider,
-} from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { AuthPageLayout } from "./AuthPageLayout";
+import { Icon } from "../../components/sage/Icon";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -40,62 +30,83 @@ export default function Login() {
 
   return (
     <AuthPageLayout>
-      <Card>
-        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Typography variant="h5" align="center" gutterBottom fontWeight={600}>
-            {t("auth.login")}
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label={t("auth.email")}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              margin="normal"
-              required
-              autoComplete="email"
-            />
-            <TextField
-              fullWidth
-              label={t("auth.password")}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              margin="normal"
-              required
-              autoComplete="current-password"
-            />
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={isSubmitting}
-              sx={{ mt: 2 }}
-            >
-              {t("auth.login")}
-            </Button>
-          </Box>
-          <Box sx={{ textAlign: "center", mt: 2 }}>
-            <Link component={RouterLink} to="/forgot-password" variant="body2">
-              {t("auth.forgotPassword")}
-            </Link>
-          </Box>
-          <Divider sx={{ my: 2 }} />
-          <Typography align="center" variant="body2" color="text.secondary">
-            {t("auth.noAccount")}{" "}
-            <Link component={RouterLink} to="/register" fontWeight={600}>
-              {t("auth.register")}
-            </Link>
-          </Typography>
-        </CardContent>
-      </Card>
+      <h1
+        style={{
+          margin: "0 0 18px",
+          fontFamily: "var(--font-display)",
+          fontWeight: 400,
+          fontSize: 36,
+          letterSpacing: "-0.015em",
+          textAlign: "center",
+          color: "var(--ink)",
+        }}
+      >
+        {t("auth.login")}
+      </h1>
+      {error && <div className="fp-alert fp-alert-error">{error}</div>}
+      <form className="fp-form" onSubmit={handleSubmit}>
+        <div className="fp-field">
+          <label className="fp-field-label" style={{ fontSize: 16 }}>
+            {t("auth.email")}
+          </label>
+          <input
+            className="fp-input"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            autoFocus
+          />
+        </div>
+        <div className="fp-field">
+          <label className="fp-field-label" style={{ fontSize: 16 }}>
+            {t("auth.password")}
+          </label>
+          <input
+            className="fp-input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+        <button
+          type="submit"
+          className="fp-btn fp-btn-primary"
+          disabled={isSubmitting}
+          style={{ justifyContent: "center" }}
+        >
+          <Icon.Check />
+          {t("auth.login")}
+        </button>
+      </form>
+      <div style={{ textAlign: "center", marginTop: 18 }}>
+        <RouterLink
+          to="/forgot-password"
+          style={{ color: "var(--sage-800)", fontSize: 13, textDecoration: "none" }}
+        >
+          {t("auth.forgotPassword")}
+        </RouterLink>
+      </div>
+      <div style={{ height: 1, background: "var(--hairline)", margin: "20px 0" }} />
+      <p
+        style={{
+          textAlign: "center",
+          fontSize: 13,
+          color: "var(--muted)",
+          margin: 0,
+        }}
+      >
+        {t("auth.noAccount")}{" "}
+        <RouterLink
+          to="/register"
+          style={{ color: "var(--sage-800)", fontWeight: 600, textDecoration: "none" }}
+        >
+          {t("auth.register")}
+        </RouterLink>
+      </p>
     </AuthPageLayout>
   );
 }
