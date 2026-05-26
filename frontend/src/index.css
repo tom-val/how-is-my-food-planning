@@ -555,10 +555,12 @@ html, body {
   color: var(--ink-2);
 }
 .fp-meal-pill-name {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  max-width: 280px;
   min-width: 0;
   flex: 1 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
 }
 .fp-meal-pill-x {
   width: 18px; height: 18px;
