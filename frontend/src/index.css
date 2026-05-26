@@ -749,6 +749,7 @@ html, body {
   width: 220px; height: 220px;
   background: radial-gradient(circle, oklch(0.88 0.07 145 / 0.5), transparent 70%);
   border-radius: 999px;
+  pointer-events: none;
 }
 .fp-recipe-hero::after {
   content: '';
@@ -757,6 +758,7 @@ html, body {
   width: 160px; height: 160px;
   background: radial-gradient(circle, oklch(0.9 0.06 90 / 0.45), transparent 70%);
   border-radius: 999px;
+  pointer-events: none;
 }
 .fp-recipe-hero-inner { position: relative; z-index: 1; }
 .fp-recipe-hero-back {
@@ -1370,7 +1372,12 @@ html, body {
 .fp-app.is-mobile .fp-meal-pill-name { max-width: none; }
 .fp-app.is-mobile .fp-recipe-hero { padding: 24px 22px; }
 .fp-app.is-mobile .fp-recipe-hero h1 { font-size: 30px; max-width: 100%; }
-.fp-app.is-mobile .fp-recipe-hero-actions { position: static; margin-top: 14px; }
+.fp-app.is-mobile .fp-recipe-hero-actions {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin-top: 14px;
+}
 .fp-app.is-mobile .fp-shop-summary { padding: 16px; gap: 14px; flex-wrap: wrap; }
 .fp-app.is-mobile .fp-shop-summary-actions { flex: 1 1 100%; }
 .fp-app.is-mobile .fp-family-grid { grid-template-columns: 1fr 1fr; }
@@ -1899,13 +1906,17 @@ html, body {
   align-items: center;
 }
 .fp-app.is-mobile .fp-ing-row {
-  grid-template-columns: 22px 1fr 70px 36px;
-  grid-template-areas: "n n n d" "h name qty del";
-  gap: 6px;
+  grid-template-columns: 16px 1fr 52px 64px 30px;
+  gap: 5px;
 }
-.fp-app.is-mobile .fp-ing-name { grid-area: name; }
-.fp-app.is-mobile .fp-ing-qty { grid-area: qty; }
-.fp-app.is-mobile .fp-ing-unit { display: none; }
+.fp-app.is-mobile .fp-input.fp-ing-name,
+.fp-app.is-mobile .fp-input.fp-ing-qty,
+.fp-app.is-mobile .fp-input.fp-ing-unit {
+  padding: 9px 8px;
+  font-size: 12px;
+}
+.fp-app.is-mobile .fp-ing-handle { font-size: 14px; }
+.fp-app.is-mobile .fp-ing-remove { width: 30px; height: 30px; }
 .fp-ing-handle {
   font-family: var(--font-display);
   font-size: 18px;
