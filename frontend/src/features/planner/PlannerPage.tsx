@@ -8,13 +8,16 @@ import {
   addCustomMeal,
   removeMeal,
   scheduleMeal,
+  assignPlan,
   getMonday,
 } from "../../api/plannerApi";
 import { listRecipes } from "../../api/recipeApi";
+import { getMyFamily } from "../../api/familyApi";
 import type { PlannedMeal } from "../../api/plannerApi";
 import type { RecipeWithIngredients } from "../../api/recipeApi";
 import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
+import { Popover } from "../../components/sage/Popover";
 import { useMobile } from "../../components/sage/useMobile";
 import {
   addDays,
@@ -81,6 +84,7 @@ export default function PlannerPage() {
     slot: MealType;
     suggested: RecipeWithIngredients | null;
   } | null>(null);
+  const [assignAnchor, setAssignAnchor] = useState<HTMLElement | null>(null);
 
   const weekStart = useMemo(() => {
     const today = new Date();
@@ -101,6 +105,21 @@ export default function PlannerPage() {
     queryFn: () => getPlan(weekStart),
   });
   const { data: recipes } = useQuery({ queryKey: ["recipes"], queryFn: listRecipes });
+  const { data: familyData } = useQuery({ queryKey: ["family", "my"], queryFn: getMyFamily });
+
+  const assignMutation = useMutation({
+    mutationFn: ({
+      assignedTo,
+      assignedName,
+    }: {
+      assignedTo: string | null;
+      assignedName: string | null;
+    }) => assignPlan(planData!.plan.id, assignedTo, assignedName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plan", weekStart] });
+      setAssignAnchor(null);
+    },
+  });
 
   const addMutation = useMutation({
     mutationFn: ({
@@ -362,6 +381,15 @@ export default function PlannerPage() {
             <Icon.Plus />
             {t("planner.filters.unassigned")}
           </button>
+          <button
+            type="button"
+            className={`fp-chip ${planData?.plan.assignedName ? "is-active" : ""}`}
+            onClick={(e) => setAssignAnchor(e.currentTarget)}
+            title={t("planner.assignTo")}
+          >
+            <Icon.Person />
+            {planData?.plan.assignedName ?? t("planner.unassigned")}
+          </button>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {isMobile && weekOffset !== 0 && (
@@ -486,6 +514,56 @@ export default function PlannerPage() {
           onReroll={handleDiceReroll}
           onClose={() => setDiceAnchor(null)}
         />
+      )}
+
+      {assignAnchor && (
+        <Popover
+          anchor={assignAnchor}
+          onClose={() => setAssignAnchor(null)}
+          align="left"
+        >
+          <div className="fp-popover-head">{t("planner.assignTo")}</div>
+          <button
+            type="button"
+            className="fp-popover-item"
+            onClick={() =>
+              assignMutation.mutate({ assignedTo: null, assignedName: null })
+            }
+          >
+            <Icon.PersonOff />
+            {t("planner.unassigned")}
+          </button>
+          <div className="fp-popover-divider" />
+          {familyData?.members.map((member) => {
+            const active = planData?.plan.assignedTo === member.userId;
+            return (
+              <button
+                key={member.userId}
+                type="button"
+                className="fp-popover-item"
+                onClick={() =>
+                  assignMutation.mutate({
+                    assignedTo: member.userId,
+                    assignedName: member.displayName,
+                  })
+                }
+                style={
+                  active
+                    ? { background: "var(--sage-50)", color: "var(--sage-800)" }
+                    : undefined
+                }
+              >
+                <Icon.Person />
+                {member.displayName}
+                {active && (
+                  <span className="fp-popover-item-sub">
+                    <Icon.Check />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </Popover>
       )}
 
       {toast && <div className="fp-toast">{toast}</div>}

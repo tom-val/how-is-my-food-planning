@@ -81,9 +81,18 @@ export function MealRow({
             onTouchEnd={endPress}
             onClick={(e) => handleClick(e, meal)}
           >
-            <span className="fp-meal-pill-dot" />
+            {meal.isShadow ? (
+              <span
+                className="fp-meal-pill-mark"
+                title={t("planner.repeated")}
+                aria-label={t("planner.repeated")}
+              >
+                <Icon.Refresh />
+              </span>
+            ) : (
+              <span className="fp-meal-pill-dot" />
+            )}
             <span className="fp-meal-pill-name">{meal.recipeName}</span>
-            {meal.isShadow && <span className="fp-meal-badge">↻ {t("planner.repeated")}</span>}
             <button
               type="button"
               className="fp-meal-pill-x"

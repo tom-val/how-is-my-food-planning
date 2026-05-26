@@ -582,6 +582,15 @@ html, body {
   opacity: .55;
   flex: 0 0 auto;
 }
+.fp-meal-pill-mark {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  opacity: 0.7;
+}
+.fp-meal-pill-mark svg { width: 12px; height: 12px; }
 
 /* repeated badge */
 .fp-meal-badge {
