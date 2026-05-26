@@ -45,13 +45,14 @@ export function Popover({
 
     let left: number;
     if (align === "right") {
-      left = Math.min(a.right - p.width, vw - p.width - pad);
+      left = a.right - p.width;
     } else if (align === "center") {
       left = a.left + a.width / 2 - p.width / 2;
     } else {
       left = a.left;
     }
-    left = Math.max(pad, left);
+    // Clamp to viewport on both sides regardless of alignment.
+    left = Math.max(pad, Math.min(left, vw - p.width - pad));
 
     let top = a.bottom + offset;
     if (top + p.height > vh - pad) {

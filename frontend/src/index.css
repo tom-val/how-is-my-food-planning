@@ -524,6 +524,7 @@ html, body {
 .fp-meal-slot {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
   min-height: 32px;
+  min-width: 0;
 }
 
 /* meal pill (assigned) */
@@ -556,6 +557,8 @@ html, body {
 .fp-meal-pill-name {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   max-width: 280px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .fp-meal-pill-x {
   width: 18px; height: 18px;
@@ -1174,6 +1177,7 @@ html, body {
   box-shadow: var(--shadow-pop);
   padding: 6px;
   min-width: 220px;
+  max-width: calc(100vw - 16px);
 }
 .fp-popover-item {
   display: flex; align-items: center; gap: 10px;
@@ -1352,7 +1356,7 @@ html, body {
 .fp-app.is-mobile .fp-day-name { font-size: 26px; }
 .fp-app.is-mobile .fp-meal { grid-template-columns: 26px 78px 1fr; gap: 10px; padding: 10px 0; }
 .fp-app.is-mobile .fp-meal-label { font-size: 11px; }
-.fp-app.is-mobile .fp-meal-pill-name { max-width: 180px; }
+.fp-app.is-mobile .fp-meal-pill-name { max-width: none; }
 .fp-app.is-mobile .fp-recipe-hero { padding: 24px 22px; }
 .fp-app.is-mobile .fp-recipe-hero h1 { font-size: 30px; max-width: 100%; }
 .fp-app.is-mobile .fp-recipe-hero-actions { position: static; margin-top: 14px; }
