@@ -62,7 +62,8 @@ html, body {
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* === Base === */
@@ -75,7 +76,10 @@ html, body {
   font-family: var(--font-ui);
   color: var(--ink);
   background: var(--cream);
-  min-height: 100vh;
+  /* Pin the shell to the viewport so .fp-main scrolls internally and the
+     bottom nav stays put. dvh tracks mobile browser chrome (vh fallback). */
+  height: 100vh;
+  height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -1888,6 +1892,14 @@ html, body {
   background: var(--surface);
 }
 .fp-input::placeholder { color: var(--faint); }
+/* iOS Safari auto-zooms (and shifts the layout) when a focused form field's
+   font-size is below 16px. Bump controls to 16px on small screens to stop it.
+   Unscoped so it also reaches portaled sheet/modal inputs. */
+@media (max-width: 640px) {
+  .fp-input,
+  select,
+  textarea { font-size: 16px; }
+}
 .fp-input-lg {
   font-family: var(--font-display);
   font-size: 24px;
