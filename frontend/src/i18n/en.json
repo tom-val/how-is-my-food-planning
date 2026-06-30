@@ -199,7 +199,21 @@
     "addItemPlaceholder": "Add custom item...",
     "addItem": "Add item manually",
     "itemName": "Item name",
-    "fromYourPlan": "From your plan"
+    "fromYourPlan": "From your plan",
+    "tabWeekly": "Weekly",
+    "tabGeneral": "General"
+  },
+  "generalShopping": {
+    "eyebrow": "Household supplies to buy",
+    "subtitle": "Standing list · not tied to a week",
+    "summarySub": "{{n}} items still to pick up",
+    "summaryDone": "All done!",
+    "empty": "No supplies yet. Add things you need to buy in general.",
+    "addItem": "Add supply",
+    "itemName": "Item name",
+    "addItemPlaceholder": "e.g. Toilet paper, cleaner...",
+    "deleteConfirmTitle": "Remove item?",
+    "deleteConfirmMessage": "\"{{name}}\" will be removed from the general shopping list."
   },
   "days": {
     "mon": "Monday",

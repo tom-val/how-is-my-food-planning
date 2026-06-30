@@ -199,7 +199,21 @@
     "addItemPlaceholder": "Pridėti produktą...",
     "addItem": "Pridėti produktą",
     "itemName": "Produkto pavadinimas",
-    "fromYourPlan": "Iš plano"
+    "fromYourPlan": "Iš plano",
+    "tabWeekly": "Savaitės",
+    "tabGeneral": "Bendras"
+  },
+  "generalShopping": {
+    "eyebrow": "Namų ūkio prekės",
+    "subtitle": "Nuolatinis sąrašas · nesusietas su savaite",
+    "summarySub": "Liko {{n}} pirkinių",
+    "summaryDone": "Viskas!",
+    "empty": "Prekių dar nėra. Pridėkite tai, ką reikia nupirkti bendrai.",
+    "addItem": "Pridėti prekę",
+    "itemName": "Prekės pavadinimas",
+    "addItemPlaceholder": "pvz. Tualetinis popierius, valiklis...",
+    "deleteConfirmTitle": "Pašalinti prekę?",
+    "deleteConfirmMessage": "„{{name}}“ bus pašalinta iš bendro pirkinių sąrašo."
   },
   "days": {
     "mon": "Pirmadienis",

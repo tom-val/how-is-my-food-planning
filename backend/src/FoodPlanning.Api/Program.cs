@@ -2,6 +2,7 @@ using Amazon.Lambda.AspNetCoreServer;
 using Amazon.SQS;
 using FluentValidation;
 using FoodPlanning.Api.Features.Families;
+using FoodPlanning.Api.Features.GeneralShopping;
 using FoodPlanning.Api.Features.Planner;
 using FoodPlanning.Api.Features.Recipes;
 using FoodPlanning.Api.Features.Shopping;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IAiRecipeJobRepository, AiRecipeJobRepository>();
 builder.Services.AddScoped<IPlannerRepository, PlannerRepository>();
 builder.Services.AddScoped<IShoppingRepository, ShoppingRepository>();
+builder.Services.AddScoped<IGeneralShoppingRepository, GeneralShoppingRepository>();
 
 var app = builder.Build();
 
@@ -83,5 +85,6 @@ app.MapFamilyEndpoints();
 app.MapRecipeEndpoints();
 app.MapPlannerEndpoints();
 app.MapShoppingEndpoints();
+app.MapGeneralShoppingEndpoints();
 
 app.Run();
