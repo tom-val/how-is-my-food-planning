@@ -59,8 +59,6 @@ html, body {
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
 #root {
@@ -85,6 +83,9 @@ html, body {
   line-height: 1.45;
   letter-spacing: -0.005em;
   position: relative;
+  /* Guard against accidental sideways scroll without creating a scroll
+     container (overflow:hidden would break the sticky bottom nav). */
+  overflow-x: clip;
 }
 .fp-app button { font-family: inherit; }
 .fp-app em, .fp-app i { font-style: normal; }
