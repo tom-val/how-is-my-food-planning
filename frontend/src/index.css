@@ -386,10 +386,12 @@ html, body {
   justify-content: center;
   z-index: 200;
 }
+.fp-sheet, .fp-sheet * { box-sizing: border-box; }
 .fp-sheet {
   width: 100%;
   max-width: 560px;
   max-height: 92vh;
+  max-height: 92dvh;
   background: var(--surface);
   border-radius: 22px 22px 0 0;
   box-shadow: var(--shadow-lg);
