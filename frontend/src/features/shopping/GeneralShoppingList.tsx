@@ -11,6 +11,7 @@ import {
 import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
 import { Modal } from "../../components/sage/Modal";
+import { BottomSheet } from "../../components/sage/BottomSheet";
 
 const KEY = ["general-shopping"];
 
@@ -20,7 +21,6 @@ export default function GeneralShoppingList() {
   const [addOpen, setAddOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [itemQty, setItemQty] = useState("");
-  const [itemUnit, setItemUnit] = useState("");
   const [pendingDelete, setPendingDelete] = useState<GeneralShoppingItem | null>(
     null,
   );
@@ -61,16 +61,11 @@ export default function GeneralShoppingList() {
 
   const addItemMutation = useMutation({
     mutationFn: () =>
-      addGeneralItem(
-        itemName.trim(),
-        itemQty ? Number(itemQty) : null,
-        itemUnit.trim() || null,
-      ),
+      addGeneralItem(itemName.trim(), itemQty ? Number(itemQty) : null, null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KEY });
       setItemName("");
       setItemQty("");
-      setItemUnit("");
       setAddOpen(false);
     },
   });
@@ -211,7 +206,7 @@ export default function GeneralShoppingList() {
         </div>
       )}
 
-      <Modal
+      <BottomSheet
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t("generalShopping.addItem")}
@@ -249,33 +244,21 @@ export default function GeneralShoppingList() {
               autoFocus
             />
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <div className="fp-field" style={{ flex: 1 }}>
-              <label className="fp-field-label" style={{ fontSize: 16 }}>
-                {t("recipes.quantity")}
-              </label>
-              <input
-                className="fp-input"
-                type="number"
-                step="any"
-                min={0}
-                value={itemQty}
-                onChange={(e) => setItemQty(e.target.value)}
-              />
-            </div>
-            <div className="fp-field" style={{ flex: 1 }}>
-              <label className="fp-field-label" style={{ fontSize: 16 }}>
-                {t("recipes.unit")}
-              </label>
-              <input
-                className="fp-input"
-                value={itemUnit}
-                onChange={(e) => setItemUnit(e.target.value)}
-              />
-            </div>
+          <div className="fp-field">
+            <label className="fp-field-label" style={{ fontSize: 16 }}>
+              {t("recipes.quantity")}
+            </label>
+            <input
+              className="fp-input"
+              type="number"
+              step="any"
+              min={0}
+              value={itemQty}
+              onChange={(e) => setItemQty(e.target.value)}
+            />
           </div>
         </div>
-      </Modal>
+      </BottomSheet>
 
       <Modal
         open={!!pendingDelete}

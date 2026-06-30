@@ -12,6 +12,7 @@ import { getPlan, getMonday } from "../../api/plannerApi";
 import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
 import { Modal } from "../../components/sage/Modal";
+import { BottomSheet } from "../../components/sage/BottomSheet";
 import {
   isoWeek,
   parseLocalDate,
@@ -335,7 +336,7 @@ export default function WeeklyShoppingList() {
         </p>
       </Modal>
 
-      <Modal
+      <BottomSheet
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={t("shopping.addItem")}
@@ -373,7 +374,7 @@ export default function WeeklyShoppingList() {
               autoFocus
             />
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 14 }}>
             <div className="fp-field" style={{ flex: 1 }}>
               <label className="fp-field-label" style={{ fontSize: 16 }}>
                 {t("recipes.quantity")}
@@ -399,7 +400,7 @@ export default function WeeklyShoppingList() {
             </div>
           </div>
         </div>
-      </Modal>
+      </BottomSheet>
     </>
   );
 }

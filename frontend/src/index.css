@@ -59,6 +59,8 @@ html, body {
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 #root {
@@ -371,6 +373,83 @@ html, body {
 .fp-tab.is-active {
   background: var(--sage-600);
   color: var(--surface);
+}
+
+/* bottom sheet / drawer */
+.fp-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 18, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+}
+.fp-sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--hairline);
+  border-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+  animation: fp-sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@keyframes fp-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.fp-sheet-grab {
+  flex: 0 0 auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.fp-sheet-grab:active { cursor: grabbing; }
+.fp-sheet-handle {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--hairline-strong);
+  margin: 10px auto 4px;
+}
+.fp-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 22px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.fp-sheet-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.fp-sheet-head .fp-icon-btn { flex: 0 0 auto; }
+.fp-sheet-body {
+  padding: 22px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.fp-sheet-footer {
+  padding: 14px 22px 18px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  border-top: 1px dashed var(--hairline);
+  background: var(--cream);
+  flex-wrap: wrap;
 }
 
 /* toolbar row */
