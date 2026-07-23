@@ -10,6 +10,7 @@ const ForgotPassword = lazy(() => import("./features/auth/ForgotPassword"));
 const PlannerPage = lazy(() => import("./features/planner/PlannerPage"));
 const RecipeListPage = lazy(() => import("./features/recipes/RecipeListPage"));
 const RecipeCreatePage = lazy(() => import("./features/recipes/RecipeCreatePage"));
+const ImportRecipesPage = lazy(() => import("./features/recipes/ImportRecipesPage"));
 const AiRecipePage = lazy(() => import("./features/recipes/AiRecipePage"));
 const RecipeEditPage = lazy(() => import("./features/recipes/RecipeEditPage"));
 const RecipeDetailPage = lazy(() => import("./features/recipes/RecipeDetailPage"));
@@ -86,6 +87,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <AiRecipePage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: "recipes/import",
+        element: (
+          <SuspenseWrapper>
+            <ImportRecipesPage />
           </SuspenseWrapper>
         ),
       },

@@ -122,6 +122,15 @@ export default function RecipeListPage() {
           </button>
           <button
             type="button"
+            className="fp-btn fp-btn-ghost"
+            onClick={() => navigate("/recipes/import")}
+            title="Vienkartinis importas iš „meal plan.xlsx“"
+          >
+            <Icon.Forward />
+            Importas
+          </button>
+          <button
+            type="button"
             className="fp-btn fp-btn-primary"
             onClick={() => navigate("/recipes/new")}
           >
