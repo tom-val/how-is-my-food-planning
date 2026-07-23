@@ -1,65 +1,33 @@
 <!DOCTYPE html>
-<html lang="lt">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Receptai — importui</title>
 <style>
-  :root {
-    --bg:#faf8f5; --card:#ffffff; --ink:#2c2c2c; --muted:#7a756e;
-    --line:#e8e3dc; --accent:#c2703d; --accent-soft:#f4e6dc; --chip:#eef1ec;
-    --b:#e8a13d; --m:#5b8a72; --s:#8a6ec2;
-  }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-         background:var(--bg); color:var(--ink); line-height:1.5; }
-  header { padding:28px 20px 8px; max-width:1100px; margin:0 auto; }
-  h1 { margin:0 0 4px; font-size:1.7rem; }
-  .sub { color:var(--muted); font-size:.95rem; }
-  .stats { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; font-size:.9rem; color:var(--muted); }
-  .stats b { color:var(--accent); }
-  main { max-width:1100px; margin:0 auto; padding:12px 20px 60px; }
-  .grp { margin-top:38px; }
-  .grp > h2 { font-size:1.35rem; margin:0 0 2px; padding-bottom:6px; display:flex; align-items:baseline; gap:10px;
-              border-bottom:3px solid var(--gc); }
-  .grp > h2 .cnt { margin-left:auto; font-size:.85rem; font-weight:600; color:#fff; background:var(--gc);
-                   border-radius:20px; padding:2px 12px; }
-  .grp > h2 .en { color:var(--muted); font-weight:400; font-size:.9rem; }
-  .subh { font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
-          margin:22px 0 8px; font-weight:700; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
-  .recipe { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
-            box-shadow:0 1px 2px rgba(0,0,0,.03); }
-  .recipe h3 { margin:0 0 4px; font-size:1.05rem; display:flex; align-items:baseline; gap:8px; }
-  .recipe h3 .n { color:var(--muted); font-variant-numeric:tabular-nums; font-size:.8rem; }
-  .tags { margin:0 0 10px; display:flex; gap:5px; flex-wrap:wrap; }
-  .tag { font-size:.68rem; padding:1px 8px; border-radius:20px; font-weight:600; }
-  .tag.breakfast { background:#fbecd0; color:#8a5a12; }
-  .tag.lunch, .tag.dinner { background:#dcebe3; color:#2f5c47; }
-  .tag.snack { background:#e7e0f5; color:#4d3a80; }
-  .tag.src { background:var(--chip); color:var(--muted); font-weight:500; }
-  table { width:100%; border-collapse:collapse; font-size:.9rem; }
-  td { padding:4px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
-  tr:last-child td { border-bottom:none; }
-  .prod { width:60%; }
-  .qty { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; color:#444; }
-  .unit { color:var(--muted); white-space:nowrap; }
-  .icat { display:inline-block; font-size:.72rem; color:var(--muted); }
-  .flag { background:var(--accent-soft); color:var(--accent); font-size:.7rem; padding:1px 6px; border-radius:10px; margin-left:6px; }
-  .empty { background:var(--card); border:1px dashed var(--line); border-radius:12px; padding:22px; color:var(--muted); font-size:.92rem; }
-  footer { max-width:1100px; margin:0 auto; padding:0 20px 50px; color:var(--muted); font-size:.82rem; }
-  code { background:var(--chip); padding:1px 5px; border-radius:4px; font-size:.85em; }
-</style>
-</head>
-<body>
-<header>
-  <h1>Receptai</h1>
-  <div class="sub">Iš „meal plan.xlsx“ — suskirstyta pagal sistemos kategorijas (pusryčiai · pietūs/vakarienė · užkandžiai).</div>
-  <div class="stats"><span><b>32</b> receptai</span><span><b>246</b> ingredientai</span><span><b>3</b> kategorijos</span></div>
+  :root{--bg:#faf8f5;--card:#fff;--ink:#2c2c2c;--muted:#7a756e;--line:#e8e3dc;--accent:#c2703d;--accent-soft:#f4e6dc;--chip:#eef1ec;--b:#e8a13d;--m:#5b8a72;--s:#8a6ec2;}
+  *{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;}
+  header{padding:28px 20px 8px;max-width:1100px;margin:0 auto;} h1{margin:0 0 4px;font-size:1.7rem;} .sub{color:var(--muted);font-size:.95rem;}
+  .stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:.9rem;color:var(--muted);} .stats b{color:var(--accent);}
+  main{max-width:1100px;margin:0 auto;padding:12px 20px 60px;}
+  .grp{margin-top:38px;} .grp>h2{font-size:1.35rem;margin:0 0 2px;padding-bottom:6px;display:flex;align-items:baseline;gap:10px;border-bottom:3px solid var(--gc);}
+  .grp>h2 .cnt{margin-left:auto;font-size:.85rem;font-weight:600;color:#fff;background:var(--gc);border-radius:20px;padding:2px 12px;} .grp>h2 .en{color:var(--muted);font-weight:400;font-size:.9rem;}
+  .subh{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:22px 0 8px;font-weight:700;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+  .recipe{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .recipe h3{margin:0 0 4px;font-size:1.05rem;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;} .recipe h3 .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.8rem;}
+  .tags{margin:0 0 10px;display:flex;gap:5px;flex-wrap:wrap;} .tag{font-size:.68rem;padding:1px 8px;border-radius:20px;font-weight:600;}
+  .tag.breakfast{background:#fbecd0;color:#8a5a12;} .tag.lunch,.tag.dinner{background:#dcebe3;color:#2f5c47;} .tag.snack{background:#e7e0f5;color:#4d3a80;} .tag.src{background:var(--chip);color:var(--muted);font-weight:500;}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;} td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top;} tr:last-child td{border-bottom:none;}
+  .prod{width:60%;} .qty{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:#444;} .unit{color:var(--muted);white-space:nowrap;} .icat{display:inline-block;font-size:.72rem;color:var(--muted);}
+  .flag{font-size:.66rem;padding:1px 7px;border-radius:10px;font-weight:600;} .flag.corr{background:var(--accent-soft);color:var(--accent);} .flag.new{background:#dcebe3;color:#2f5c47;} .flag.inf{background:#fbe3d0;color:#a5591f;}
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:22px;color:var(--muted);font-size:.92rem;}
+  footer{max-width:1100px;margin:0 auto;padding:0 20px 50px;color:var(--muted);font-size:.82rem;} code{background:var(--chip);padding:1px 5px;border-radius:4px;font-size:.85em;}
+</style></head><body>
+<header><h1>Receptai</h1>
+<div class="sub">Iš „meal plan.xlsx“ — 32 iš „Produktų sąrašas“ + 11 atkurtų iš „turbo produktų sąrašas“ ir savaitės planų. Suskirstyta pagal sistemos kategorijas.</div>
+<div class="stats"><span><b>43</b> receptai</span><span><b>309</b> ingredientai</span><span><b>11</b> nauji</span></div>
 </header>
 <main>
 <section class="grp" style="--gc:var(--b)">
-  <h2>Pusryčiai <span class="en">Breakfast</span><span class="cnt">11</span></h2>
+  <h2>Pusryčiai <span class="en">Breakfast</span><span class="cnt">15</span></h2>
   <div class="grid">
     <article class="recipe">
       <h3><span class="n">01</span> varškėčiai</h3>
@@ -182,14 +150,49 @@
         <tr><td class="prod">Sūris<br><span class="icat">Pieno produktai</span></td><td class="qty">50</td><td class="unit">g</td></tr>
       </table>
     </article>
+    <article class="recipe">
+      <h3><span class="n">12</span> Varškės sūris su medumi<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag breakfast">pusryčiai</span><span class="tag src">Pusryčiai</span></div>
+      <table>
+        <tr><td class="prod">Varškės sūris<br><span class="icat">Pieno produktai</span></td><td class="qty">200</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Medus<br><span class="icat">Bakalėja</span></td><td class="qty">2</td><td class="unit">v.š.</td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">13</span> Žaliasis kokteilis<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag breakfast">pusryčiai</span><span class="tag src">Pusryčiai</span></div>
+      <table>
+        <tr><td class="prod">bananai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">špinatai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">augalinis pienas<br><span class="icat">Kita</span></td><td class="qty"></td><td class="unit"></td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">14</span> Vaisių kokteilis<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag breakfast">pusryčiai</span><span class="tag src">Pusryčiai</span></div>
+      <table>
+        <tr><td class="prod">bananai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">apelsinai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">obuoliai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">15</span> Kokteilis su imbieru<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag breakfast">pusryčiai</span><span class="tag src">Pusryčiai</span></div>
+      <table>
+        <tr><td class="prod">bananai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">apelsinai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">imbieras<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+      </table>
+    </article>
   </div>
 </section>
 <section class="grp" style="--gc:var(--m)">
-  <h2>Pietūs / Vakarienė <span class="en">Lunch / Dinner</span><span class="cnt">21</span></h2>
-  <div class="subh">Sriubos · 3</div>
+  <h2>Pietūs / Vakarienė <span class="en">Lunch / Dinner</span><span class="cnt">28</span></h2>
+  <div class="subh">Sriubos · 5</div>
   <div class="grid">
     <article class="recipe">
-      <h3><span class="n">12</span> Trinta daržovių sriuba<span class="flag">kat. pataisyta</span></h3>
+      <h3><span class="n">16</span> Trinta daržovių sriuba<span class="flag corr">kat. pataisyta</span></h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Sriubos</span></div>
       <table>
         <tr><td class="prod">Morkos<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">vnt.</td></tr>
@@ -208,7 +211,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">13</span> Barščiai</h3>
+      <h3><span class="n">17</span> Barščiai</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Sriubos</span></div>
       <table>
         <tr><td class="prod">Konservuoti burokėliai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">stiklainis</td></tr>
@@ -224,7 +227,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">14</span> Brokolių sriuba</h3>
+      <h3><span class="n">18</span> Brokolių sriuba</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Sriubos</span></div>
       <table>
         <tr><td class="prod">Brokoliai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">galva</td></tr>
@@ -238,11 +241,33 @@
         <tr><td class="prod">Rudieji ryžiai<br><span class="icat">Kruopos</span></td><td class="qty">100</td><td class="unit">g</td></tr>
       </table>
     </article>
+    <article class="recipe">
+      <h3><span class="n">19</span> Moliūgų sriuba<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Sriubos</span></div>
+      <table>
+        <tr><td class="prod">Moliūgas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">500</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Svogūnas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Česnakas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">skiltelės</td></tr>
+        <tr><td class="prod">Bulvė<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Grietinėlė<br><span class="icat">Pieno produktai</span></td><td class="qty">200</td><td class="unit">ml</td></tr>
+        <tr><td class="prod">Daržovių sultinys<br><span class="icat">Kita</span></td><td class="qty">500</td><td class="unit">ml</td></tr>
+        <tr><td class="prod">Alyvuogių aliejus<br><span class="icat">Kita</span></td><td class="qty">1</td><td class="unit">v.š.</td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">20</span> Pomidorinė sriuba<span class="flag new">naujas</span><span class="flag inf">spėjama</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Sriubos</span></div>
+      <table>
+        <tr><td class="prod">Svogūnas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Česnakas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">skiltelės</td></tr>
+        <tr><td class="prod">Konservuoti pomidorai<br><span class="icat">Bakalėja</span></td><td class="qty">2</td><td class="unit">skardinė</td></tr>
+      </table>
+    </article>
   </div>
   <div class="subh">Salotos · 3</div>
   <div class="grid">
     <article class="recipe">
-      <h3><span class="n">15</span> Cezario salotos</h3>
+      <h3><span class="n">21</span> Cezario salotos</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Salotos</span></div>
       <table>
         <tr><td class="prod">Vištienos krūtinėlė<br><span class="icat">Mėsa</span></td><td class="qty">400</td><td class="unit">g</td></tr>
@@ -258,7 +283,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">16</span> Pavasarinės salotos</h3>
+      <h3><span class="n">22</span> Pavasarinės salotos</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Salotos</span></div>
       <table>
         <tr><td class="prod">Ridikėliai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">250</td><td class="unit">g</td></tr>
@@ -269,7 +294,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">17</span> Salotos su halumiu</h3>
+      <h3><span class="n">23</span> Salotos su halumiu</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Salotos</span></div>
       <table>
         <tr><td class="prod">Iceberg<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">galva</td></tr>
@@ -281,10 +306,10 @@
       </table>
     </article>
   </div>
-  <div class="subh">Makaronai · 4</div>
+  <div class="subh">Makaronai · 5</div>
   <div class="grid">
     <article class="recipe">
-      <h3><span class="n">18</span> makaronai su vištiena</h3>
+      <h3><span class="n">24</span> makaronai su vištiena</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Makaronai</span></div>
       <table>
         <tr><td class="prod">Vištienos krūtinėlė<br><span class="icat">Mėsa</span></td><td class="qty">1</td><td class="unit">vnt.</td></tr>
@@ -299,7 +324,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">19</span> Bolonijos padažas</h3>
+      <h3><span class="n">25</span> Bolonijos padažas</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Makaronai</span></div>
       <table>
         <tr><td class="prod">Morka<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">150</td><td class="unit">g</td></tr>
@@ -317,7 +342,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">20</span> Peanut butter noodles</h3>
+      <h3><span class="n">26</span> Peanut butter noodles</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Makaronai</span></div>
       <table>
         <tr><td class="prod">Ryžių makaronai<br><span class="icat">Kruopos</span></td><td class="qty">200</td><td class="unit">g</td></tr>
@@ -337,7 +362,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">21</span> Makaronai su svogūnais</h3>
+      <h3><span class="n">27</span> Makaronai su svogūnais</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Makaronai</span></div>
       <table>
         <tr><td class="prod">Makaronai<br><span class="icat">Kruopos</span></td><td class="qty">320</td><td class="unit">g</td></tr>
@@ -350,11 +375,22 @@
         <tr><td class="prod">Sūris<br><span class="icat">Pieno produktai</span></td><td class="qty">100</td><td class="unit">g</td></tr>
       </table>
     </article>
+    <article class="recipe">
+      <h3><span class="n">28</span> Įdaryti makaronai su mėsa<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Makaronai</span></div>
+      <table>
+        <tr><td class="prod">Malta jautiena<br><span class="icat">Mėsa</span></td><td class="qty">500</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Svogūnas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Makaronų vamzdeliai<br><span class="icat">Kruopos</span></td><td class="qty">500</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Druska<br><span class="icat">Kita</span></td><td class="qty">-</td><td class="unit">-</td></tr>
+        <tr><td class="prod">Prieskoniai (maltos mėsos)<br><span class="icat">Kita</span></td><td class="qty">-</td><td class="unit">-</td></tr>
+      </table>
+    </article>
   </div>
-  <div class="subh">Troškiniai · 4</div>
+  <div class="subh">Troškiniai · 6</div>
   <div class="grid">
     <article class="recipe">
-      <h3><span class="n">22</span> plovas</h3>
+      <h3><span class="n">29</span> plovas</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
       <table>
         <tr><td class="prod">Jautiena<br><span class="icat">Mėsa</span></td><td class="qty">700</td><td class="unit">g</td></tr>
@@ -372,7 +408,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">23</span> pad thai</h3>
+      <h3><span class="n">30</span> pad thai</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
       <table>
         <tr><td class="prod">Vištienos filė<br><span class="icat">Mėsa</span></td><td class="qty">400</td><td class="unit">g</td></tr>
@@ -389,7 +425,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">24</span> Čili troškinys</h3>
+      <h3><span class="n">31</span> Čili troškinys</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
       <table>
         <tr><td class="prod">Malta jautiena<br><span class="icat">Mėsa</span></td><td class="qty">400</td><td class="unit">g</td></tr>
@@ -404,7 +440,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">25</span> Karis su bulvėm</h3>
+      <h3><span class="n">32</span> Karis su bulvėm</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
       <table>
         <tr><td class="prod">Bulvės<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">400</td><td class="unit">g</td></tr>
@@ -417,11 +453,49 @@
         <tr><td class="prod">vištienos sultinys<br><span class="icat">Bakalėja</span></td><td class="qty">1</td><td class="unit">kubelis</td></tr>
       </table>
     </article>
+    <article class="recipe">
+      <h3><span class="n">33</span> Troškinti kopūstai su dešrelėmis<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
+      <table>
+        <tr><td class="prod">rauginti kopūstai<br><span class="icat">Bakalėja</span></td><td class="qty">350</td><td class="unit">g</td></tr>
+        <tr><td class="prod">storos dešrelės<br><span class="icat">Mėsa</span></td><td class="qty">3</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Morkos<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Svogūnai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">0.5</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Pomidorų padažas<br><span class="icat">Bakalėja</span></td><td class="qty">1.5</td><td class="unit">v.š.</td></tr>
+        <tr><td class="prod">Ciberžolė<br><span class="icat">Kita</span></td><td class="qty">0.5</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">Kmynai<br><span class="icat">Kita</span></td><td class="qty">0.5</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">Lauro lapai<br><span class="icat">Kita</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Česnakas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">2</td><td class="unit">vnt</td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">34</span> Vištiena tikka masala<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Troškiniai</span></div>
+      <table>
+        <tr><td class="prod">Vištienos krūtinėlė<br><span class="icat">Mėsa</span></td><td class="qty">300</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Grietinėlė<br><span class="icat">Pieno produktai</span></td><td class="qty">120</td><td class="unit">ml</td></tr>
+        <tr><td class="prod">Konservuoti pomidorai<br><span class="icat">Bakalėja</span></td><td class="qty">100</td><td class="unit">ml</td></tr>
+        <tr><td class="prod">Pomidorų padažas<br><span class="icat">Bakalėja</span></td><td class="qty">100</td><td class="unit">ml</td></tr>
+        <tr><td class="prod">Svogūnas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">0.5</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Imbieras<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">saldžiosios paprikos milteliai<br><span class="icat">Kita</span></td><td class="qty">1</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">aitriosios paprikos milteliai<br><span class="icat">Kita</span></td><td class="qty">1</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">citrinų sultys<br><span class="icat">Kita</span></td><td class="qty">0.5</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">cukraus<br><span class="icat">Bakalėja</span></td><td class="qty">0.5</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">malta kalendra<br><span class="icat">Kita</span></td><td class="qty">0.6</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">malta ciberžolė<br><span class="icat">Kita</span></td><td class="qty">0.3</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">garam masala prieskoniai<br><span class="icat">Kita</span></td><td class="qty">0.6</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">Česnakas<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">3</td><td class="unit">skiltelės</td></tr>
+        <tr><td class="prod">Jogurtas<br><span class="icat">Pieno produktai</span></td><td class="qty">1</td><td class="unit">v.š.</td></tr>
+        <tr><td class="prod">Maltas kuminas<br><span class="icat">Kita</span></td><td class="qty">0.5</td><td class="unit">a.š.</td></tr>
+        <tr><td class="prod">Ryžiai<br><span class="icat">Kruopos</span></td><td class="qty">100</td><td class="unit">g</td></tr>
+      </table>
+    </article>
   </div>
-  <div class="subh">Kažkas įdomesnio · 7</div>
+  <div class="subh">Kažkas įdomesnio · 9</div>
   <div class="grid">
     <article class="recipe">
-      <h3><span class="n">26</span> kesadilijos</h3>
+      <h3><span class="n">35</span> kesadilijos</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Vištienos krūtinėlė<br><span class="icat">Mėsa</span></td><td class="qty">450</td><td class="unit">g</td></tr>
@@ -438,7 +512,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">27</span> Bulviniai blynai</h3>
+      <h3><span class="n">36</span> Bulviniai blynai</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Bulvės<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">400</td><td class="unit">g</td></tr>
@@ -448,7 +522,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">28</span> Kiniška vištiena</h3>
+      <h3><span class="n">37</span> Kiniška vištiena</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Vištiena<br><span class="icat">Mėsa</span></td><td class="qty">800</td><td class="unit">g</td></tr>
@@ -462,7 +536,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">29</span> Kotletai</h3>
+      <h3><span class="n">38</span> Kotletai</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Malta kiauliena<br><span class="icat">Mėsa</span></td><td class="qty">600</td><td class="unit">g</td></tr>
@@ -476,7 +550,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">30</span> Tortilijos</h3>
+      <h3><span class="n">39</span> Tortilijos</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Tortilijos (vidutinio dydžio)<br><span class="icat">Duona</span></td><td class="qty">8</td><td class="unit">vnt</td></tr>
@@ -490,7 +564,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">31</span> Vištiena meduje su bulvėm</h3>
+      <h3><span class="n">40</span> Vištiena meduje su bulvėm</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Vištienos filė<br><span class="icat">Mėsa</span></td><td class="qty">800</td><td class="unit">g</td></tr>
@@ -500,7 +574,7 @@
       </table>
     </article>
     <article class="recipe">
-      <h3><span class="n">32</span> Lazanija</h3>
+      <h3><span class="n">41</span> Lazanija</h3>
       <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
       <table>
         <tr><td class="prod">Plokšti makaronai<br><span class="icat">Bakalėja</span></td><td class="qty">10</td><td class="unit">vnt</td></tr>
@@ -517,16 +591,39 @@
         <tr><td class="prod">salieras<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
       </table>
     </article>
+    <article class="recipe">
+      <h3><span class="n">42</span> Pica<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
+      <table>
+        <tr><td class="prod">Picos padas<br><span class="icat">Duona</span></td><td class="qty">1</td><td class="unit">vnt</td></tr>
+        <tr><td class="prod">Pomidorų padažas<br><span class="icat">Bakalėja</span></td><td class="qty">100</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Mocarela sūris<br><span class="icat">Pieno produktai</span></td><td class="qty">150</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Sūris<br><span class="icat">Pieno produktai</span></td><td class="qty">50</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Grybai<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty">100</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Kumpis<br><span class="icat">Mėsa</span></td><td class="qty">50</td><td class="unit">g</td></tr>
+        <tr><td class="prod">Alyvuogių aliejus<br><span class="icat">Kita</span></td><td class="qty">1</td><td class="unit">a.š.</td></tr>
+      </table>
+    </article>
+    <article class="recipe">
+      <h3><span class="n">43</span> Burgeriai<span class="flag new">naujas</span></h3>
+      <div class="tags"><span class="tag lunch">pietūs</span><span class="tag dinner">vakarienė</span><span class="tag src">Kažkas įdomesnio</span></div>
+      <table>
+        <tr><td class="prod">malta mėsa<br><span class="icat">Mėsa</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">pomidoras<br><span class="icat">Daržovės, vaisiai</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">bandelės<br><span class="icat">Duona</span></td><td class="qty"></td><td class="unit"></td></tr>
+        <tr><td class="prod">kokios nors be gliuteno duonelės<br><span class="icat">Duona</span></td><td class="qty"></td><td class="unit"></td></tr>
+      </table>
+    </article>
   </div>
 </section>
 <section class="grp" style="--gc:var(--s)">
   <h2>Užkandžiai <span class="en">Snacks</span><span class="cnt">0</span></h2>
-  <div class="empty">Kol kas nėra receptų šioje kategorijoje. Iš „meal plan.xlsx“ nė vienas patiekalas nebuvo pažymėtas kaip užkandis — galima priskirti rankiniu būdu (pvz. chia pudingus).</div>
+  <div class="empty">Kol kas nėra receptų šioje kategorijoje.</div>
 </section>
 </main>
 <footer>
-  <p><b>Kategorijų priskyrimas:</b> pusryčiai → <code>breakfast</code>; pietūs/vakarienė → <code>lunch</code> + <code>dinner</code> (patiekalas tinka abiem); užkandžiai → <code>snack</code>.</p>
-  <p>Vienetų sutrumpinimai: <code>v.š.</code> = valg. šaukštas · <code>a.š.</code> = arb. šaukštas · <code>vnt</code> · <code>g</code>/<code>ml</code>/<code>l</code> · <code>riekės</code>=slices · <code>skiltelės</code>=cloves · <code>pakeliai</code>=packs.</p>
+  <p><b>Naujai atkurti (11):</b> Varškės sūris su medumi, 3 kokteiliai (Pusryčiai) · Pica, Įdaryti makaronai su mėsa, Moliūgų sriuba, Pomidorinė sriuba (spėjama), Troškinti kopūstai su dešrelėmis, Vištiena tikka masala, Burgeriai (Pietūs/Vakarienė).</p>
+  <p>Praleista (nėra ingredientų faile): <code>Blynai</code> (bendras), <code>Salotos su bolivine balanda</code>.</p>
   <p>Importui paruošti duomenys (API forma) įterpti žemiau: <code>id="recipes-data"</code>.</p>
 </footer>
 <script id="recipes-data" type="application/json">
@@ -668,7 +765,7 @@
       {
         "name": "duona",
         "quantity": 4,
-        "unit": "riekės"
+        "unit": "rieks."
       },
       {
         "name": "sviestas",
@@ -697,7 +794,7 @@
       {
         "name": "duona",
         "quantity": 4,
-        "unit": "riekės"
+        "unit": "rieks."
       },
       {
         "name": "kiaušiniai",
@@ -721,7 +818,7 @@
       {
         "name": "duona",
         "quantity": 4,
-        "unit": "riekės"
+        "unit": "rieks."
       },
       {
         "name": "sviestas",
@@ -847,7 +944,7 @@
       {
         "name": "duona",
         "quantity": 4,
-        "unit": "riekės"
+        "unit": "rieks."
       },
       {
         "name": "pomidoras",
@@ -887,7 +984,7 @@
       {
         "name": "Česnakas",
         "quantity": 3,
-        "unit": "skiltelės"
+        "unit": "sk."
       },
       {
         "name": "Svogūnai",
@@ -981,7 +1078,7 @@
       },
       {
         "name": "Juodieji pipirai",
-        "quantity": "0.5",
+        "quantity": 0.5,
         "unit": "a.š."
       },
       {
@@ -997,7 +1094,7 @@
       {
         "name": "Paprika",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       }
     ]
   },
@@ -1012,7 +1109,7 @@
       {
         "name": "Vištienos krūtinėlė",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Penne makaronai",
@@ -1022,12 +1119,12 @@
       {
         "name": "Sviestas",
         "quantity": 2,
-        "unit": "valg. šaukštai"
+        "unit": "v.š."
       },
       {
         "name": "Česnakas",
         "quantity": 3,
-        "unit": "skiltelės"
+        "unit": "sk."
       },
       {
         "name": "Vištienos sultinys",
@@ -1077,12 +1174,12 @@
       {
         "name": "kiaušiniai",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Morkos",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Žemės riešutai",
@@ -1092,7 +1189,7 @@
       {
         "name": "Česnakas",
         "quantity": 2,
-        "unit": "skiltelės"
+        "unit": "sk."
       },
       {
         "name": "Sezamų aliejus",
@@ -1107,12 +1204,12 @@
       {
         "name": "Svogūnų laiškai",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Paprika",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Pad thai padažas",
@@ -1147,7 +1244,7 @@
       {
         "name": "Česnako skiltelės",
         "quantity": 3,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Pancetta arba šoninė",
@@ -1207,7 +1304,7 @@
       {
         "name": "Česnakas",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Aliejus",
@@ -1251,8 +1348,8 @@
       },
       {
         "name": "Svogūnų laiškai",
-        "quantity": "pagal poreikį",
-        "unit": "-"
+        "quantity": null,
+        "unit": null
       },
       {
         "name": "Smulkinti žemės riešutai",
@@ -1261,8 +1358,8 @@
       },
       {
         "name": "Kalendra",
-        "quantity": "pagal poreikį",
-        "unit": "-"
+        "quantity": null,
+        "unit": null
       },
       {
         "name": "Vištiena",
@@ -1287,12 +1384,12 @@
       {
         "name": "kiaušiniai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Svogūnai",
         "quantity": 0.5,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Grietinė",
@@ -1317,17 +1414,17 @@
       {
         "name": "Svogūnai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Česnako skiltelės",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Paprika",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Konservuoti pomidorai",
@@ -1422,12 +1519,12 @@
       {
         "name": "kiaušiniai",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Džiūvėsėliai",
         "quantity": 3,
-        "unit": "valg. šaukštai"
+        "unit": "v.š."
       },
       {
         "name": "Svogūnai",
@@ -1492,12 +1589,12 @@
       {
         "name": "Česnakas",
         "quantity": 1,
-        "unit": "skiltelė"
+        "unit": "sk."
       },
       {
         "name": "kiaušiniai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Dižono garstyčios",
@@ -1527,22 +1624,22 @@
       {
         "name": "Morkos",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Salierų stiebai",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Poras",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Svogūnai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Sviestas",
@@ -1552,7 +1649,7 @@
       {
         "name": "Pastarnokas",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Bulvės",
@@ -1582,12 +1679,12 @@
       {
         "name": "Rozmarinas",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Batonas skrudinimui",
         "quantity": 3,
-        "unit": "riekės"
+        "unit": "rieks."
       }
     ]
   },
@@ -1607,12 +1704,12 @@
       {
         "name": "Svogūnai",
         "quantity": 3,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Česnakas",
         "quantity": 4,
-        "unit": "skiltelės"
+        "unit": "sk."
       },
       {
         "name": "Džiovinti pomidorai",
@@ -1657,17 +1754,17 @@
       {
         "name": "Morka",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Svogūnai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Saliero stiebas",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Bulvės",
@@ -1677,12 +1774,12 @@
       {
         "name": "Česnako skiltelės",
         "quantity": 3,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Pomidorų pasta",
         "quantity": 2,
-        "unit": "valg. šaukštai"
+        "unit": "v.š."
       },
       {
         "name": "Malta kiauliena",
@@ -1692,7 +1789,7 @@
       {
         "name": "kiaušiniai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Svogūnai",
@@ -1762,17 +1859,17 @@
       {
         "name": "Svogūnai",
         "quantity": 1,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Saliero stiebai",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Česnakas",
         "quantity": 2,
-        "unit": "vnt."
+        "unit": "vnt"
       },
       {
         "name": "Daržovių sultinys",
@@ -1951,7 +2048,7 @@
       {
         "name": "kokosų aliejus",
         "quantity": 1,
-        "unit": "šaukštas"
+        "unit": "v.š."
       },
       {
         "name": "vištienos sultinys",
@@ -1981,7 +2078,7 @@
       {
         "name": "Pomidorų pasta",
         "quantity": 1,
-        "unit": "šaukštas"
+        "unit": "v.š."
       },
       {
         "name": "svogūnai",
@@ -2069,8 +2166,428 @@
         "unit": "g"
       }
     ]
+  },
+  {
+    "name": "Varškės sūris su medumi",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "Varškės sūris",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Medus",
+        "quantity": 2,
+        "unit": "v.š."
+      }
+    ]
+  },
+  {
+    "name": "Žaliasis kokteilis",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "špinatai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "augalinis pienas",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Vaisių kokteilis",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "apelsinai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "obuoliai",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Kokteilis su imbieru",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": 2,
+        "unit": "vnt"
+      },
+      {
+        "name": "apelsinai",
+        "quantity": 2,
+        "unit": "vnt"
+      },
+      {
+        "name": "imbieras",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Pica",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Picos padas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Mocarela sūris",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Sūris",
+        "quantity": 50,
+        "unit": "g"
+      },
+      {
+        "name": "Grybai",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Kumpis",
+        "quantity": 50,
+        "unit": "g"
+      },
+      {
+        "name": "Alyvuogių aliejus",
+        "quantity": 1,
+        "unit": "a.š."
+      }
+    ]
+  },
+  {
+    "name": "Įdaryti makaronai su mėsa",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Malta jautiena",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Makaronų vamzdeliai",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Druska",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "Prieskoniai (maltos mėsos)",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Moliūgų sriuba",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Moliūgas",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "sk."
+      },
+      {
+        "name": "Bulvė",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Grietinėlė",
+        "quantity": 200,
+        "unit": "ml"
+      },
+      {
+        "name": "Daržovių sultinys",
+        "quantity": 500,
+        "unit": "ml"
+      },
+      {
+        "name": "Alyvuogių aliejus",
+        "quantity": 1,
+        "unit": "v.š."
+      }
+    ]
+  },
+  {
+    "name": "Pomidorinė sriuba",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "sk."
+      },
+      {
+        "name": "Konservuoti pomidorai",
+        "quantity": 2,
+        "unit": "skardinė"
+      }
+    ]
+  },
+  {
+    "name": "Troškinti kopūstai su dešrelėmis",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "rauginti kopūstai",
+        "quantity": 350,
+        "unit": "g"
+      },
+      {
+        "name": "storos dešrelės",
+        "quantity": 3,
+        "unit": "vnt"
+      },
+      {
+        "name": "Morkos",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Svogūnai",
+        "quantity": 0.5,
+        "unit": "vnt"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 1.5,
+        "unit": "v.š."
+      },
+      {
+        "name": "Ciberžolė",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Kmynai",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Lauro lapai",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "vnt"
+      }
+    ]
+  },
+  {
+    "name": "Vištiena tikka masala",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Vištienos krūtinėlė",
+        "quantity": 300,
+        "unit": "g"
+      },
+      {
+        "name": "Grietinėlė",
+        "quantity": 120,
+        "unit": "ml"
+      },
+      {
+        "name": "Konservuoti pomidorai",
+        "quantity": 100,
+        "unit": "ml"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 100,
+        "unit": "ml"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 0.5,
+        "unit": "vnt"
+      },
+      {
+        "name": "Imbieras",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "saldžiosios paprikos milteliai",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "aitriosios paprikos milteliai",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "citrinų sultys",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "cukraus",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "malta kalendra",
+        "quantity": 0.6,
+        "unit": "a.š."
+      },
+      {
+        "name": "malta ciberžolė",
+        "quantity": 0.3,
+        "unit": "a.š."
+      },
+      {
+        "name": "garam masala prieskoniai",
+        "quantity": 0.6,
+        "unit": "a.š."
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 3,
+        "unit": "sk."
+      },
+      {
+        "name": "Jogurtas",
+        "quantity": 1,
+        "unit": "v.š."
+      },
+      {
+        "name": "Maltas kuminas",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Ryžiai",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "name": "Burgeriai",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "malta mėsa",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "pomidoras",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "bandelės",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "kokios nors be gliuteno duonelės",
+        "quantity": null,
+        "unit": null
+      }
+    ]
   }
 ]
 </script>
-</body>
-</html>
+</body></html>

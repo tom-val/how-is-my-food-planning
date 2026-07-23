@@ -1,10 +1,12 @@
 import type { AiSuggestedRecipe } from "../../api/recipeApi";
 
 /**
- * One-time import dataset extracted from "meal plan.xlsx" (sheet "Produktų sąrašas").
- * 32 recipes. Category mapping: breakfast -> ["breakfast"];
- * soups/salads/pasta/stews/"something interesting" -> ["lunch", "dinner"].
- * Units normalised to the app vocabulary; "as needed" quantities set to null.
+ * One-time import dataset extracted from "meal plan.xlsx".
+ * 43 recipes: 32 from sheet "Produktų sąrašas" + 11 recovered from
+ * "turbo produktų sąrašas" (by recipe ID) and the weekly-plan sheets.
+ * Category mapping: breakfast -> ["breakfast"]; soups/salads/pasta/stews/
+ * "something interesting" -> ["lunch", "dinner"].
+ * Units normalised to the app vocabulary; unknown/"as needed" quantities -> null.
  * Safe to delete this file (and ImportRecipesPage) once the import is done.
  */
 export const IMPORT_RECIPES: AiSuggestedRecipe[] = [
@@ -1544,6 +1546,427 @@ export const IMPORT_RECIPES: AiSuggestedRecipe[] = [
         "name": "Graikiniai riešutai",
         "quantity": 50,
         "unit": "g"
+      }
+    ]
+  },
+  {
+    "name": "Varškės sūris su medumi",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "Varškės sūris",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Medus",
+        "quantity": 2,
+        "unit": "v.š."
+      }
+    ]
+  },
+  {
+    "name": "Žaliasis kokteilis",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "špinatai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "augalinis pienas",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Vaisių kokteilis",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "apelsinai",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "obuoliai",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Kokteilis su imbieru",
+    "instructions": null,
+    "categories": [
+      "breakfast"
+    ],
+    "ingredients": [
+      {
+        "name": "bananai",
+        "quantity": 2,
+        "unit": "vnt"
+      },
+      {
+        "name": "apelsinai",
+        "quantity": 2,
+        "unit": "vnt"
+      },
+      {
+        "name": "imbieras",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Pica",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Picos padas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Mocarela sūris",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Sūris",
+        "quantity": 50,
+        "unit": "g"
+      },
+      {
+        "name": "Grybai",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Kumpis",
+        "quantity": 50,
+        "unit": "g"
+      },
+      {
+        "name": "Alyvuogių aliejus",
+        "quantity": 1,
+        "unit": "a.š."
+      }
+    ]
+  },
+  {
+    "name": "Įdaryti makaronai su mėsa",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Malta jautiena",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Makaronų vamzdeliai",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Druska",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "Prieskoniai (maltos mėsos)",
+        "quantity": null,
+        "unit": null
+      }
+    ]
+  },
+  {
+    "name": "Moliūgų sriuba",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Moliūgas",
+        "quantity": 500,
+        "unit": "g"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "sk."
+      },
+      {
+        "name": "Bulvė",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Grietinėlė",
+        "quantity": 200,
+        "unit": "ml"
+      },
+      {
+        "name": "Daržovių sultinys",
+        "quantity": 500,
+        "unit": "ml"
+      },
+      {
+        "name": "Alyvuogių aliejus",
+        "quantity": 1,
+        "unit": "v.š."
+      }
+    ]
+  },
+  {
+    "name": "Pomidorinė sriuba",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Svogūnas",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "sk."
+      },
+      {
+        "name": "Konservuoti pomidorai",
+        "quantity": 2,
+        "unit": "skardinė"
+      }
+    ]
+  },
+  {
+    "name": "Troškinti kopūstai su dešrelėmis",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "rauginti kopūstai",
+        "quantity": 350,
+        "unit": "g"
+      },
+      {
+        "name": "storos dešrelės",
+        "quantity": 3,
+        "unit": "vnt"
+      },
+      {
+        "name": "Morkos",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Svogūnai",
+        "quantity": 0.5,
+        "unit": "vnt"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 1.5,
+        "unit": "v.š."
+      },
+      {
+        "name": "Ciberžolė",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Kmynai",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Lauro lapai",
+        "quantity": 1,
+        "unit": "vnt"
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 2,
+        "unit": "vnt"
+      }
+    ]
+  },
+  {
+    "name": "Vištiena tikka masala",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "Vištienos krūtinėlė",
+        "quantity": 300,
+        "unit": "g"
+      },
+      {
+        "name": "Grietinėlė",
+        "quantity": 120,
+        "unit": "ml"
+      },
+      {
+        "name": "Konservuoti pomidorai",
+        "quantity": 100,
+        "unit": "ml"
+      },
+      {
+        "name": "Pomidorų padažas",
+        "quantity": 100,
+        "unit": "ml"
+      },
+      {
+        "name": "Svogūnas",
+        "quantity": 0.5,
+        "unit": "vnt"
+      },
+      {
+        "name": "Imbieras",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "saldžiosios paprikos milteliai",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "aitriosios paprikos milteliai",
+        "quantity": 1,
+        "unit": "a.š."
+      },
+      {
+        "name": "citrinų sultys",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "cukraus",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "malta kalendra",
+        "quantity": 0.6,
+        "unit": "a.š."
+      },
+      {
+        "name": "malta ciberžolė",
+        "quantity": 0.3,
+        "unit": "a.š."
+      },
+      {
+        "name": "garam masala prieskoniai",
+        "quantity": 0.6,
+        "unit": "a.š."
+      },
+      {
+        "name": "Česnakas",
+        "quantity": 3,
+        "unit": "sk."
+      },
+      {
+        "name": "Jogurtas",
+        "quantity": 1,
+        "unit": "v.š."
+      },
+      {
+        "name": "Maltas kuminas",
+        "quantity": 0.5,
+        "unit": "a.š."
+      },
+      {
+        "name": "Ryžiai",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ]
+  },
+  {
+    "name": "Burgeriai",
+    "instructions": null,
+    "categories": [
+      "lunch",
+      "dinner"
+    ],
+    "ingredients": [
+      {
+        "name": "malta mėsa",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "pomidoras",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "bandelės",
+        "quantity": null,
+        "unit": null
+      },
+      {
+        "name": "kokios nors be gliuteno duonelės",
+        "quantity": null,
+        "unit": null
       }
     ]
   }
