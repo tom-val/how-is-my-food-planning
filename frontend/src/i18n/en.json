@@ -240,6 +240,16 @@
       "aiSortNothing": "Nothing to sort – every item already has a category.",
       "aiSortError": "Couldn't sort with AI. Please try again.",
       "aiSortTimeout": "AI sorting took too long. Please try again later."
+    },
+    "filter": {
+      "hideTicked": "Hide ticked",
+      "hideTickedHint": "Show only items that aren't ticked yet",
+      "hiddenCount_one": "{{count}} ticked item hidden",
+      "hiddenCount_other": "{{count}} ticked items hidden",
+      "show": "Show",
+      "allDoneTitle": "Everything's in the basket!",
+      "allDoneSub": "Ticked items are hidden.",
+      "showTicked": "Show ticked items"
     }
   },
   "generalShopping": {
@@ -308,7 +318,18 @@
       "ctaMessage": "Plan the week's meals, keep your recipes in one place and get shopping lists made for you.",
       "ctaRegister": "Create an account",
       "ctaLogin": "Sign in",
-      "ctaOpenApp": "Open my recipes"
+      "ctaOpenApp": "Open my recipes",
+      "save": "Save to my recipes",
+      "saving": "Saving…",
+      "signInToSave": "Sign in to save",
+      "saved": "Saved to your recipes",
+      "saveAlreadyOwned": "This recipe is already in your recipes",
+      "saveError": "Couldn't save the recipe. Please try again.",
+      "saveGone": "This link is no longer shared, so the recipe couldn't be saved.",
+      "saveNoFamily": "To save recipes, first create a family or join an existing one.",
+      "saveNoFamilyLink": "Go to Family",
+      "saveCtaTitle": "Like this recipe?",
+      "saveCtaMessage": "Save it to your recipes to adapt it for your family and add it to your weekly plan and shopping list."
     }
   },
   "lang": {

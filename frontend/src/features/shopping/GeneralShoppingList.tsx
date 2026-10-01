@@ -14,6 +14,8 @@ import { Modal } from "../../components/sage/Modal";
 import { BottomSheet } from "../../components/sage/BottomSheet";
 import { GroupedShoppingItems } from "./GroupedShoppingItems";
 import { AiSortButton } from "./AiSortButton";
+import { HideTickedToggle } from "./HideTicked";
+import { useHideTicked } from "./useHideTicked";
 import {
   GENERAL_SHOPPING_KEY as KEY,
   useShoppingCategories,
@@ -34,6 +36,7 @@ export default function GeneralShoppingList({
   const [pendingDelete, setPendingDelete] = useState<GeneralShoppingItem | null>(
     null,
   );
+  const [hideTicked, setHideTicked] = useHideTicked();
 
   const { data, isLoading } = useQuery({
     queryKey: KEY,
@@ -146,6 +149,7 @@ export default function GeneralShoppingList({
             <div className="fp-shop-summary-sub">
               {t("generalShopping.summarySub", { n: total - done })}
             </div>
+            <HideTickedToggle checked={hideTicked} onChange={setHideTicked} />
           </div>
           <div className="fp-shop-summary-actions no-print">
             <button
@@ -194,15 +198,15 @@ export default function GeneralShoppingList({
           getName={(item) => item.itemName}
           getCategoryId={(item) => item.categoryId}
           isChecked={(item) => item.isChecked}
-          renderItem={(item, moveAction) => (
+          onToggle={(item, isChecked) =>
+            toggleMutation.mutate({ itemId: item.id, isChecked })
+          }
+          hideTicked={hideTicked}
+          onShowTicked={() => setHideTicked(false)}
+          renderItem={(item, moveAction, toggle) => (
             <div
               className={`fp-shop-item ${item.isChecked ? "is-done" : ""}`}
-              onClick={() =>
-                toggleMutation.mutate({
-                  itemId: item.id,
-                  isChecked: !item.isChecked,
-                })
-              }
+              onClick={toggle}
             >
               <span className={`fp-check ${item.isChecked ? "is-on" : ""}`}>
                 {item.isChecked && <Icon.Check />}

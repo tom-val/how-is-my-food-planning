@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import type { ShoppingCategory } from "../../api/shoppingCategoriesApi";
 import { CategoryPicker } from "./CategoryPicker";
 import { groupByCategory } from "./groupByCategory";
+import { AllTickedState, HiddenTickedNote } from "./HideTicked";
 import { TagIcon } from "./shoppingIcons";
 import { useAssignCategory } from "./useShoppingCategories";
+import { useTickedFilter } from "./useTickedFilter";
 
 interface GroupedShoppingItemsProps<T> {
   items: T[];
@@ -13,11 +15,20 @@ interface GroupedShoppingItemsProps<T> {
   getName: (item: T) => string;
   getCategoryId: (item: T) => string | null;
   isChecked: (item: T) => boolean;
+  /** Ticks or unticks an item (the list's optimistic update). */
+  onToggle: (item: T, isChecked: boolean) => void;
+  /** Whether ticked items are hidden (see `useHideTicked`). */
+  hideTicked: boolean;
+  /** Turns the "hide ticked" filter off. */
+  onShowTicked: () => void;
   /**
    * Renders one `.fp-shop-item` row. `moveAction` is the "change category"
-   * button to place in the row (null when the family has no categories).
+   * button to place in the row (null when the family has no categories) and
+   * `toggle` ticks or unticks the item; use it rather than calling the
+   * mutation directly so a fresh tick stays visible while ticked items are
+   * hidden.
    */
-  renderItem: (item: T, moveAction: ReactNode) => ReactNode;
+  renderItem: (item: T, moveAction: ReactNode, toggle: () => void) => ReactNode;
 }
 
 interface PickerState {
@@ -30,7 +41,8 @@ interface PickerState {
 /**
  * Renders a shopping list either flat (no categories — exactly as before) or
  * grouped under category headers with a trailing "Other" group, and owns the
- * per-item "move to category" picker.
+ * per-item "move to category" picker. When `hideTicked` is on, only unticked
+ * items (and groups that still have some) are shown.
  */
 export function GroupedShoppingItems<T>({
   items,
@@ -39,22 +51,59 @@ export function GroupedShoppingItems<T>({
   getName,
   getCategoryId,
   isChecked,
+  onToggle,
+  hideTicked,
+  onShowTicked,
   renderItem,
 }: GroupedShoppingItemsProps<T>) {
   const { t } = useTranslation();
   const assign = useAssignCategory();
   const [picker, setPicker] = useState<PickerState | null>(null);
   const closePicker = useCallback(() => setPicker(null), []);
+  const { visible, hiddenCount, noteToggle } = useTickedFilter(items, {
+    enabled: hideTicked,
+    getId,
+    isChecked,
+  });
+
+  const toggle = (item: T) => () => {
+    const next = !isChecked(item);
+    noteToggle(getId(item), next);
+    onToggle(item, next);
+  };
+
+  if (hideTicked && visible.length === 0) {
+    return <AllTickedState onShow={onShowTicked} />;
+  }
+
+  const hiddenNote =
+    hideTicked && hiddenCount > 0 ? (
+      <HiddenTickedNote count={hiddenCount} onShow={onShowTicked} />
+    ) : null;
+  const filterClass = hideTicked ? " fp-shop-hide-ticked" : "";
 
   if (categories.length === 0) {
     return (
-      <div className="fp-shop-list">
-        {items.map((item) => (
-          <Fragment key={getId(item)}>{renderItem(item, null)}</Fragment>
-        ))}
-      </div>
+      <>
+        <div className={`fp-shop-list${filterClass}`}>
+          {visible.map((item) => (
+            <Fragment key={getId(item)}>
+              {renderItem(item, null, toggle(item))}
+            </Fragment>
+          ))}
+        </div>
+        {hiddenNote}
+      </>
     );
   }
+
+  // The picker only stays open while its row is on screen (a just-ticked item
+  // disappears after a moment when ticked items are hidden).
+  const visibleIds = new Set(visible.map(getId));
+  const openPicker =
+    picker && visibleIds.has(picker.itemId) && picker.anchor.isConnected
+      ? picker
+      : null;
 
   const moveAction = (item: T) => {
     const id = getId(item);
@@ -66,14 +115,18 @@ export function GroupedShoppingItems<T>({
         aria-label={t("shopping.categories.moveItem", { name })}
         title={t("shopping.categories.moveTo")}
         aria-haspopup="true"
-        aria-expanded={picker?.itemId === id}
+        aria-expanded={openPicker?.itemId === id}
         onClick={(e) => {
           e.stopPropagation();
-          const anchor = e.currentTarget;
-          setPicker((current) =>
-            current?.itemId === id
+          setPicker(
+            openPicker?.itemId === id
               ? null
-              : { anchor, itemId: id, itemName: name, categoryId: getCategoryId(item) },
+              : {
+                  anchor: e.currentTarget,
+                  itemId: id,
+                  itemName: name,
+                  categoryId: getCategoryId(item),
+                },
           );
         }}
       >
@@ -82,45 +135,48 @@ export function GroupedShoppingItems<T>({
     );
   };
 
-  const groups = groupByCategory(items, categories, getCategoryId);
+  // Header counts always cover every item in the category, like the summary.
+  const counts = new Map(
+    groupByCategory(items, categories, getCategoryId).map((group) => [
+      group.key,
+      `${group.items.filter(isChecked).length}/${group.items.length}`,
+    ]),
+  );
+  const groups = groupByCategory(visible, categories, getCategoryId);
 
   return (
     <>
-      <div className="fp-shop-groups">
-        {groups.map((group) => {
-          const done = group.items.filter(isChecked).length;
-          return (
-            <section key={group.key} className="fp-shop-category">
-              <div className="fp-shop-category-head">
-                <h2 className="fp-shop-category-name">
-                  {group.category?.name ?? t("shopping.categories.other")}
-                </h2>
-                <span className="fp-shop-category-rule" />
-                <span className="fp-shop-category-count">
-                  {done}/{group.items.length}
-                </span>
-              </div>
-              <div className="fp-shop-list">
-                {group.items.map((item) => (
-                  <Fragment key={getId(item)}>
-                    {renderItem(item, moveAction(item))}
-                  </Fragment>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      <div className={`fp-shop-groups${filterClass}`}>
+        {groups.map((group) => (
+          <section key={group.key} className="fp-shop-category">
+            <div className="fp-shop-category-head">
+              <h2 className="fp-shop-category-name">
+                {group.category?.name ?? t("shopping.categories.other")}
+              </h2>
+              <span className="fp-shop-category-rule" />
+              <span className="fp-shop-category-count">{counts.get(group.key)}</span>
+            </div>
+            <div className="fp-shop-list">
+              {group.items.map((item) => (
+                <Fragment key={getId(item)}>
+                  {renderItem(item, moveAction(item), toggle(item))}
+                </Fragment>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
+      {hiddenNote}
 
-      {picker && (
+      {openPicker && (
         <CategoryPicker
-          anchor={picker.anchor}
-          itemName={picker.itemName}
-          currentCategoryId={picker.categoryId}
+          anchor={openPicker.anchor}
+          itemName={openPicker.itemName}
+          currentCategoryId={openPicker.categoryId}
           categories={categories}
           onClose={closePicker}
           onPick={(categoryId) =>
-            assign.mutate({ itemName: picker.itemName, categoryId })
+            assign.mutate({ itemName: openPicker.itemName, categoryId })
           }
         />
       )}

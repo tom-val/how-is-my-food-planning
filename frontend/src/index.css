@@ -1173,6 +1173,82 @@ html, body {
   cursor: pointer;
 }
 
+/* "hide ticked" filter: switch in the summary card */
+.fp-shop-filter {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 36px;
+  margin-top: 10px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 1.2;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fp-shop-filter:hover { background: var(--sage-50); border-color: var(--sage-200); }
+.fp-shop-filter > svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--muted); }
+.fp-shop-filter-switch {
+  position: relative; flex: 0 0 auto;
+  width: 32px; height: 20px;
+  border-radius: 999px;
+  background: var(--hairline-strong);
+  transition: background .15s;
+}
+.fp-shop-filter-switch::after {
+  content: "";
+  position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px oklch(0.3 0.03 145 / 0.25);
+  transition: transform .15s;
+}
+.fp-shop-filter.is-on {
+  background: var(--sage-50);
+  border-color: var(--sage-500);
+  color: var(--sage-800);
+}
+.fp-shop-filter.is-on > svg { color: var(--sage-700); }
+.fp-shop-filter.is-on .fp-shop-filter-switch { background: var(--sage-700); }
+.fp-shop-filter.is-on .fp-shop-filter-switch::after { transform: translateX(12px); }
+.fp-app.is-mobile .fp-shop-filter { min-height: 40px; padding: 7px 8px 7px 14px; font-size: 14px; }
+
+/* "5 ticked items hidden · Show" line under a filtered list */
+.fp-shop-hidden-note {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap;
+  width: 100%; min-height: 44px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: none; border: 0; border-radius: 12px;
+  font: inherit; font-size: 13px; line-height: 1.4;
+  color: var(--muted);
+  cursor: pointer;
+}
+.fp-shop-hidden-note:hover { background: var(--sage-50); }
+.fp-shop-hidden-note svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.fp-shop-hidden-note-action {
+  font-weight: 600;
+  color: var(--sage-800);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* every item ticked while ticked items are hidden */
+.fp-shop-alldone { padding: 40px 24px; }
+.fp-shop-alldone-sub { font-size: 14px; margin-bottom: 18px; }
+
+/* a just-ticked item lingers in place (LINGER_MS in useTickedFilter.ts), then goes */
+@media (prefers-reduced-motion: no-preference) {
+  .fp-shop-hide-ticked .fp-shop-item.is-done { animation: fp-shop-linger 1s ease-in both; }
+}
+@keyframes fp-shop-linger {
+  0%, 60% { opacity: 0.55; }
+  100% { opacity: 0.2; }
+}
+
 /* move-to-category picker (popover on desktop, sheet on mobile) */
 .fp-catpick { max-height: min(360px, 60vh); overflow-y: auto; }
 .fp-catpick .fp-popover-item.is-active { background: var(--sage-50); color: var(--sage-800); }
@@ -2705,3 +2781,20 @@ html, body {
   .fp-public .fp-ingredient { padding: 6px 12px !important; break-inside: avoid; }
   .fp-public .fp-steps li { break-inside: avoid; }
 }
+
+/* Public shared-recipe page: "create or join a family first" notice after Save */
+.fp-public-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: -6px 0 22px;
+  background: var(--cream-2);
+  border-color: var(--hairline-strong);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.fp-public-notice > span { flex: 1 1 240px; min-width: 0; }
+.fp-public-notice .fp-btn { flex: 0 0 auto; }

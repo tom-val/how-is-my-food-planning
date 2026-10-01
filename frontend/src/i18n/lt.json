@@ -240,6 +240,18 @@
       "aiSortNothing": "Nėra ką rūšiuoti – visi produktai jau priskirti kategorijoms.",
       "aiSortError": "Nepavyko surūšiuoti su AI. Bandykite dar kartą.",
       "aiSortTimeout": "AI rūšiavimas užtruko per ilgai. Bandykite vėliau."
+    },
+    "filter": {
+      "hideTicked": "Slėpti pažymėtus",
+      "hideTickedHint": "Rodyti tik dar nepažymėtus pirkinius",
+      "hiddenCount_one": "{{count}} pažymėtas pirkinys paslėptas",
+      "hiddenCount_few": "{{count}} pažymėti pirkiniai paslėpti",
+      "hiddenCount_many": "{{count}} pažymėto pirkinio paslėpta",
+      "hiddenCount_other": "{{count}} pažymėtų pirkinių paslėpta",
+      "show": "Rodyti",
+      "allDoneTitle": "Viskas krepšelyje!",
+      "allDoneSub": "Pažymėti pirkiniai paslėpti.",
+      "showTicked": "Rodyti pažymėtus"
     }
   },
   "generalShopping": {
@@ -308,7 +320,18 @@
       "ctaMessage": "Suplanuokite savaitės patiekalus, laikykite receptus vienoje vietoje ir gaukite pirkinių sąrašus automatiškai.",
       "ctaRegister": "Susikurti paskyrą",
       "ctaLogin": "Prisijungti",
-      "ctaOpenApp": "Atidaryti mano receptus"
+      "ctaOpenApp": "Atidaryti mano receptus",
+      "save": "Išsaugoti mano receptuose",
+      "saving": "Išsaugoma…",
+      "signInToSave": "Prisijungti ir išsaugoti",
+      "saved": "Receptas išsaugotas jūsų receptuose",
+      "saveAlreadyOwned": "Šis receptas jau yra jūsų receptuose",
+      "saveError": "Nepavyko išsaugoti recepto. Bandykite dar kartą.",
+      "saveGone": "Šia nuoroda nebesidalinama, todėl recepto išsaugoti nepavyko.",
+      "saveNoFamily": "Norėdami išsaugoti receptą, pirmiausia sukurkite šeimą arba prisijunkite prie esamos.",
+      "saveNoFamilyLink": "Eiti į šeimą",
+      "saveCtaTitle": "Patiko šis receptas?",
+      "saveCtaMessage": "Išsaugokite jį savo receptuose — galėsite jį pritaikyti savo šeimai, įtraukti į savaitės planą ir pirkinių sąrašą."
     }
   },
   "lang": {

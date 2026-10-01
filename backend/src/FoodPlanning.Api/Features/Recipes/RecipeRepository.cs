@@ -35,6 +35,14 @@ public record PublicRecipe(
 
 public record PublicRecipeIngredient(string Name, decimal? Quantity, string? Unit);
 
+/// <summary>
+/// Outcome of copying a shared recipe into a family. <see cref="RecipeId"/> is
+/// always a recipe in the caller's family: the new copy, or — when the shared
+/// recipe already belongs to that family (<see cref="AlreadyOwned"/>) — the
+/// shared recipe itself. Another family's recipe id is never exposed.
+/// </summary>
+public record SharedRecipeCopy(Guid RecipeId, bool AlreadyOwned);
+
 public interface IRecipeRepository
 {
     Task<List<RecipeWithIngredients>> GetAllByFamilyAsync(Guid familyId);
@@ -55,6 +63,16 @@ public interface IRecipeRepository
 
     /// <summary>Looks up a shared recipe by token. Not family-scoped: the token is the credential.</summary>
     Task<PublicRecipe?> GetPublicByShareTokenAsync(string shareToken);
+
+    /// <summary>
+    /// Copies the recipe currently shared under <paramref name="shareToken"/>
+    /// (name, instructions, categories and ingredients) into
+    /// <paramref name="familyId"/>, created by <paramref name="userId"/>, in a
+    /// single transaction. The copy is not shared. If the shared recipe already
+    /// belongs to that family nothing is copied and its own id is returned.
+    /// Returns null if no recipe is currently shared under the token.
+    /// </summary>
+    Task<SharedRecipeCopy?> CopySharedAsync(string shareToken, Guid familyId, string userId);
 }
 
 public record IngredientInput(string Name, decimal? Quantity, string? Unit);
@@ -160,6 +178,72 @@ public class RecipeRepository : IRecipeRepository
         await conn.OpenAsync();
         await using var tx = await conn.BeginTransactionAsync();
 
+        var created = await InsertRecipeWithIngredientsAsync(
+            conn, tx, familyId, userId, name, instructions, categories, ingredients);
+        await tx.CommitAsync();
+
+        return created;
+    }
+
+    public async Task<SharedRecipeCopy?> CopySharedAsync(string shareToken, Guid familyId, string userId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+        await using var tx = await conn.BeginTransactionAsync();
+
+        // FOR SHARE locks the source row until commit, so a concurrent unshare,
+        // edit or delete waits for the copy instead of interleaving with it
+        // (edits update the recipe row before touching its ingredients).
+        await using var sourceCmd = new NpgsqlCommand(
+            """
+            SELECT id, family_id, name, instructions, categories
+            FROM recipes
+            WHERE share_token = @token
+            FOR SHARE
+            """, conn, tx);
+        sourceCmd.Parameters.AddWithValue("token", shareToken);
+
+        Guid sourceId;
+        Guid sourceFamilyId;
+        string name;
+        string? instructions;
+        string[] categories;
+        await using (var reader = await sourceCmd.ExecuteReaderAsync())
+        {
+            if (!await reader.ReadAsync())
+                return null;
+
+            sourceId = reader.GetGuid(0);
+            sourceFamilyId = reader.GetGuid(1);
+            name = reader.GetString(2);
+            instructions = reader.IsDBNull(3) ? null : reader.GetString(3);
+            categories = reader.IsDBNull(4) ? [] : reader.GetFieldValue<string[]>(4);
+        }
+
+        // The caller's family already has it: point them at their own recipe
+        // rather than creating a duplicate. Only in this case is the source id
+        // returned — it is then a recipe of the caller's own family.
+        if (sourceFamilyId == familyId)
+            return new SharedRecipeCopy(sourceId, AlreadyOwned: true);
+
+        var sourceIngredients = await GetIngredientsAsync(conn, sourceId, tx);
+        var copy = await InsertRecipeWithIngredientsAsync(
+            conn, tx, familyId, userId, name, instructions, categories,
+            sourceIngredients.Select(i => new IngredientInput(i.Name, i.Quantity, i.Unit)).ToList());
+        await tx.CommitAsync();
+
+        return new SharedRecipeCopy(copy.Recipe.Id, AlreadyOwned: false);
+    }
+
+    /// <summary>
+    /// Inserts a recipe and its ingredients within the caller's transaction.
+    /// The new recipe is never shared (share_token is left NULL).
+    /// </summary>
+    private static async Task<RecipeWithIngredients> InsertRecipeWithIngredientsAsync(
+        NpgsqlConnection conn, NpgsqlTransaction tx,
+        Guid familyId, string userId, string name, string? instructions, string[] categories,
+        List<IngredientInput> ingredients)
+    {
         await using var recipeCmd = new NpgsqlCommand(
             """
             INSERT INTO recipes (family_id, name, instructions, categories, created_by)
@@ -183,8 +267,6 @@ public class RecipeRepository : IRecipeRepository
             throw new InvalidOperationException("Failed to create recipe.");
 
         var savedIngredients = await InsertIngredientsAsync(conn, tx, recipe.Id, ingredients);
-        await tx.CommitAsync();
-
         return new RecipeWithIngredients(recipe, savedIngredients);
     }
 
@@ -368,7 +450,8 @@ public class RecipeRepository : IRecipeRepository
             ingredients.Select(i => new PublicRecipeIngredient(i.Name, i.Quantity, i.Unit)).ToList());
     }
 
-    private static async Task<List<RecipeIngredient>> GetIngredientsAsync(NpgsqlConnection conn, Guid recipeId)
+    private static async Task<List<RecipeIngredient>> GetIngredientsAsync(
+        NpgsqlConnection conn, Guid recipeId, NpgsqlTransaction? tx = null)
     {
         await using var cmd = new NpgsqlCommand(
             """
@@ -376,7 +459,7 @@ public class RecipeRepository : IRecipeRepository
             FROM recipe_ingredients
             WHERE recipe_id = @recipeId
             ORDER BY id
-            """, conn);
+            """, conn, tx);
         cmd.Parameters.AddWithValue("recipeId", recipeId);
 
         var list = new List<RecipeIngredient>();

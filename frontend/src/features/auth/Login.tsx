@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { AuthPageLayout } from "./AuthPageLayout";
 import { Icon } from "../../components/sage/Icon";
+import { getReturnPath, getReturnToState } from "./returnTo";
 
 export default function Login() {
   const { t } = useTranslation();
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +22,8 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       await signIn(email, password);
-      navigate("/planner");
+      // Back to where the user came from (e.g. a shared recipe), else the planner.
+      navigate(getReturnPath(location.state), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -102,6 +105,7 @@ export default function Login() {
         {t("auth.noAccount")}{" "}
         <RouterLink
           to="/register"
+          state={getReturnToState(location.state)}
           style={{ color: "var(--sage-800)", fontWeight: 600, textDecoration: "none" }}
         >
           {t("auth.register")}

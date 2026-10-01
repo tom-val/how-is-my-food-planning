@@ -27,6 +27,10 @@ public static class RecipeEndpoints
         group.MapPost("/{id:guid}/share", ShareRecipe);
         group.MapDelete("/{id:guid}/share", UnshareRecipe);
 
+        // Authenticated: save a copy of someone's shared recipe into the caller's family.
+        // Deliberately NOT under /v1/public, so it requires a signed-in user.
+        group.MapPost("/shared/{token}/copy", CopySharedRecipe);
+
         // Anonymous, read-only access to shared recipes (/v1/public/recipes/{token}).
         app.MapPublicRecipeEndpoints();
     }
@@ -158,6 +162,33 @@ public static class RecipeEndpoints
             ? Results.NoContent()
             : Results.NotFound(new { error = "Recipe not found." });
     }
+
+    public static async Task<IResult> CopySharedRecipe(
+        string token,
+        IRecipeRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        // Same as the public endpoint: malformed and unknown/revoked tokens get
+        // an identical 404, and malformed ones never reach the database.
+        if (!RecipeShareTokens.IsValidFormat(token))
+            return SharedRecipeNotFound();
+
+        var copy = await repository.CopySharedAsync(token, member.FamilyId, userId);
+        if (copy is null)
+            return SharedRecipeNotFound();
+
+        var response = new CopySharedRecipeResponse(copy.RecipeId, copy.AlreadyOwned);
+        return copy.AlreadyOwned
+            ? Results.Ok(response)
+            : Results.Created($"/v1/recipes/{copy.RecipeId}", response);
+    }
+
+    private static IResult SharedRecipeNotFound() =>
+        Results.NotFound(new { error = "Shared recipe not found." });
 
     private static async Task<IResult> AiStart(
         AiSuggestRequest request,

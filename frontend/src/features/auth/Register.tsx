@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { AuthPageLayout } from "./AuthPageLayout";
 import { Icon } from "../../components/sage/Icon";
+import { getReturnToState } from "./returnTo";
 
 const heading = (text: string) => (
   <h1
@@ -25,6 +26,10 @@ export default function Register() {
   const { t } = useTranslation();
   const { signUp, confirmSignUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Carried through sign up -> confirm -> sign in, so Login can return the user
+  // to where they started (e.g. a shared recipe).
+  const returnTo = getReturnToState(location.state);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -53,7 +58,7 @@ export default function Register() {
     setIsSubmitting(true);
     try {
       await confirmSignUp(email, confirmationCode);
-      navigate("/login");
+      navigate("/login", { state: returnTo });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -158,6 +163,7 @@ export default function Register() {
         {t("auth.hasAccount")}{" "}
         <RouterLink
           to="/login"
+          state={returnTo}
           style={{ color: "var(--sage-800)", fontWeight: 600, textDecoration: "none" }}
         >
           {t("auth.login")}

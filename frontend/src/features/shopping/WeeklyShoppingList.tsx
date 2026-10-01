@@ -21,6 +21,8 @@ import {
 } from "../../components/sage/dateUtils";
 import { GroupedShoppingItems } from "./GroupedShoppingItems";
 import { AiSortButton } from "./AiSortButton";
+import { HideTickedToggle } from "./HideTicked";
+import { useHideTicked } from "./useHideTicked";
 import { useShoppingCategories } from "./useShoppingCategories";
 
 interface WeeklyShoppingListProps {
@@ -49,6 +51,7 @@ export default function WeeklyShoppingList({
   const [itemName, setItemName] = useState("");
   const [itemQty, setItemQty] = useState("");
   const [itemUnit, setItemUnit] = useState("");
+  const [hideTicked, setHideTicked] = useHideTicked();
 
   const weekStart = useMemo(() => {
     const today = new Date();
@@ -239,6 +242,7 @@ export default function WeeklyShoppingList({
             <div className="fp-shop-summary-sub">
               {t("shopping.summarySub", { n: total - done })}
             </div>
+            <HideTickedToggle checked={hideTicked} onChange={setHideTicked} />
           </div>
           <div className="fp-shop-summary-actions no-print">
             <button
@@ -298,17 +302,17 @@ export default function WeeklyShoppingList({
           getName={(item) => item.ingredientName}
           getCategoryId={(item) => item.categoryId}
           isChecked={(item) => item.isChecked}
-          renderItem={(item, moveAction) => {
+          onToggle={(item, isChecked) =>
+            toggleMutation.mutate({ itemId: item.id, isChecked })
+          }
+          hideTicked={hideTicked}
+          onShowTicked={() => setHideTicked(false)}
+          renderItem={(item, moveAction, toggle) => {
             const sources = getRecipesFor(item.ingredientName, item.unit);
             return (
               <div
                 className={`fp-shop-item ${item.isChecked ? "is-done" : ""}`}
-                onClick={() =>
-                  toggleMutation.mutate({
-                    itemId: item.id,
-                    isChecked: !item.isChecked,
-                  })
-                }
+                onClick={toggle}
               >
                 <span className={`fp-check ${item.isChecked ? "is-on" : ""}`}>
                   {item.isChecked && <Icon.Check />}

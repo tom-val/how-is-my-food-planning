@@ -1,9 +1,10 @@
-import { useEffect, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSnackbar } from "notistack";
 import axios from "axios";
-import { getPublicRecipe } from "../../api/recipeApi";
+import { copySharedRecipe, getPublicRecipe } from "../../api/recipeApi";
 import { useAuth } from "../../hooks/useAuth";
 import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
@@ -15,10 +16,20 @@ import {
   RecipeInstructions,
   RecipeTitle,
 } from "./RecipeContent";
-import { LinkIcon } from "./shareIcons";
+import { BookmarkIcon, LinkIcon } from "./shareIcons";
 
 function isNotFound(error: unknown): boolean {
   return axios.isAxiosError(error) && error.response?.status === 404;
+}
+
+/**
+ * Our API's 403 for a signed-in user who has no family yet. API Gateway's own
+ * 403 (rejected token) has no `error` field, so it is not mistaken for this.
+ */
+function isNoFamily(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || error.response?.status !== 403) return false;
+  const body = error.response.data as { error?: unknown } | undefined;
+  return typeof body?.error === "string";
 }
 
 /** Sets document.title while mounted and restores the previous title afterwards. */
@@ -45,14 +56,20 @@ function useNoIndex() {
 }
 
 /**
- * Public, read-only view of a shared recipe at /share/:token.
- * Rendered outside RequireAuth/AppLayout: it never redirects to login and
- * makes no authenticated API calls (getPublicRecipe uses a bare client).
+ * Public view of a shared recipe at /share/:token.
+ * Rendered outside RequireAuth/AppLayout: it never redirects to login, and the
+ * recipe itself is loaded anonymously (getPublicRecipe uses a bare client).
+ * The only authenticated call is the explicit "Save to my recipes" action for
+ * signed-in users; signed-out users are offered sign-in, which returns here.
  */
 export default function PublicRecipePage() {
   const { t } = useTranslation();
   const { token = "" } = useParams<{ token: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const isMobile = useMobile();
   useNoIndex();
 
@@ -65,6 +82,79 @@ export default function PublicRecipePage() {
   });
 
   useDocumentTitle(data ? `${data.name} · ${t("app.title")}` : null);
+
+  // Set synchronously on click, so a fast double click can't start a second
+  // copy before the re-render disables the button.
+  const savingRef = useRef(false);
+  const save = useMutation({
+    mutationFn: () => copySharedRecipe(token),
+    onSuccess: ({ recipeId, alreadyOwned }) => {
+      void queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      // Either way the recipe is now in the user's recipes, so both are a success.
+      enqueueSnackbar(
+        t(alreadyOwned ? "share.public.saveAlreadyOwned" : "share.public.saved"),
+        { variant: "success" },
+      );
+      navigate(`/recipes/${recipeId}`);
+    },
+    onError: (err) => {
+      // No family yet: explained inline below the hero, with a link to /family.
+      if (isNoFamily(err)) return;
+      if (isNotFound(err)) {
+        // Sharing was stopped after the page loaded: show the "no longer
+        // available" state instead of a recipe that can't be saved.
+        enqueueSnackbar(t("share.public.saveGone"), { variant: "warning" });
+        void queryClient.resetQueries({ queryKey: ["publicRecipe", token] });
+        return;
+      }
+      enqueueSnackbar(t("share.public.saveError"), { variant: "error" });
+    },
+    onSettled: () => {
+      savingRef.current = false;
+    },
+  });
+
+  const handleSave = () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    save.mutate();
+  };
+
+  const needsFamily = save.isError && isNoFamily(save.error);
+  const noFamilyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // The save button may be far down the page (bottom CTA), so bring the notice into view.
+    if (needsFamily) {
+      noFamilyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [needsFamily]);
+
+  const saveButton = (
+    <button
+      type="button"
+      className="fp-btn fp-btn-primary"
+      onClick={handleSave}
+      disabled={save.isPending}
+      aria-busy={save.isPending}
+    >
+      <BookmarkIcon />
+      {save.isPending ? t("share.public.saving") : t("share.public.save")}
+    </button>
+  );
+
+  // Until the session check finishes we don't know which action applies, so
+  // render neither rather than flashing "Sign in to save" for signed-in users.
+  let saveAction: ReactNode = null;
+  if (!isAuthLoading) {
+    saveAction = isAuthenticated ? (
+      saveButton
+    ) : (
+      <Link to="/login" state={{ from: location }} className="fp-btn fp-btn-primary">
+        <BookmarkIcon />
+        {t("share.public.signInToSave")}
+      </Link>
+    );
+  }
 
   let content: ReactNode;
   if (isLoading) {
@@ -84,6 +174,7 @@ export default function PublicRecipePage() {
             </div>
           </div>
           <div className="fp-recipe-hero-actions">
+            {saveAction}
             <button
               type="button"
               className="fp-btn fp-btn-ghost"
@@ -94,6 +185,15 @@ export default function PublicRecipePage() {
             </button>
           </div>
         </div>
+
+        {needsFamily && (
+          <div ref={noFamilyRef} className="fp-alert fp-public-notice no-print" role="alert">
+            <span>{t("share.public.saveNoFamily")}</span>
+            <Link to="/family" className="fp-btn fp-btn-primary">
+              {t("share.public.saveNoFamilyLink")}
+            </Link>
+          </div>
+        )}
 
         <RecipeIngredientList ingredients={data.ingredients} />
 
@@ -157,26 +257,48 @@ export default function PublicRecipePage() {
         <div className="fp-main-wide">
           {content}
 
-          <aside className="fp-public-cta no-print">
-            <div className="fp-public-cta-body">
-              <div className="fp-public-cta-title">{t("share.public.ctaTitle")}</div>
-              <div className="fp-public-cta-text">{t("share.public.ctaMessage")}</div>
-            </div>
-            {isAuthenticated ? (
-              <Link to="/recipes" className="fp-btn fp-btn-ghost">
-                {t("share.public.ctaOpenApp")}
-              </Link>
-            ) : (
-              <div className="fp-public-cta-actions">
-                <Link to="/login" className="fp-textbtn">
-                  {t("share.public.ctaLogin")}
-                </Link>
-                <Link to="/register" className="fp-btn fp-btn-primary">
-                  {t("share.public.ctaRegister")}
-                </Link>
-              </div>
-            )}
-          </aside>
+          {!isAuthLoading && (
+            <aside className="fp-public-cta no-print">
+              {isAuthenticated && data ? (
+                // Signed in: the end-of-recipe prompt is about keeping this
+                // recipe, not about signing up for the app they already use.
+                <>
+                  <div className="fp-public-cta-body">
+                    <div className="fp-public-cta-title">{t("share.public.saveCtaTitle")}</div>
+                    <div className="fp-public-cta-text">{t("share.public.saveCtaMessage")}</div>
+                  </div>
+                  <div className="fp-public-cta-actions">
+                    <Link to="/recipes" className="fp-textbtn">
+                      {t("share.public.ctaOpenApp")}
+                    </Link>
+                    {saveButton}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="fp-public-cta-body">
+                    <div className="fp-public-cta-title">{t("share.public.ctaTitle")}</div>
+                    <div className="fp-public-cta-text">{t("share.public.ctaMessage")}</div>
+                  </div>
+                  {isAuthenticated ? (
+                    <Link to="/recipes" className="fp-btn fp-btn-ghost">
+                      {t("share.public.ctaOpenApp")}
+                    </Link>
+                  ) : (
+                    // Both routes come back to this recipe after signing in.
+                    <div className="fp-public-cta-actions">
+                      <Link to="/login" state={{ from: location }} className="fp-textbtn">
+                        {t("share.public.ctaLogin")}
+                      </Link>
+                      <Link to="/register" state={{ from: location }} className="fp-btn fp-btn-primary">
+                        {t("share.public.ctaRegister")}
+                      </Link>
+                    </div>
+                  )}
+                </>
+              )}
+            </aside>
+          )}
         </div>
       </main>
     </div>

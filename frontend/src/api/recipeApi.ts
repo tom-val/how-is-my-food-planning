@@ -180,6 +180,27 @@ export async function getPublicRecipe(token: string): Promise<PublicRecipe> {
   return data;
 }
 
+export interface CopySharedRecipeResponse {
+  /** Always a recipe in the caller's own family: the new copy, or their original. */
+  recipeId: string;
+  /** True when the shared recipe already belongs to the caller's family (nothing was copied). */
+  alreadyOwned: boolean;
+}
+
+/**
+ * Saves a copy of a shared recipe into the signed-in user's family.
+ * Authenticated (uses apiClient), unlike getPublicRecipe. Rejects with 403
+ * when the user has no family yet and 404 when the link no longer works.
+ */
+export async function copySharedRecipe(
+  token: string,
+): Promise<CopySharedRecipeResponse> {
+  const { data } = await apiClient.post<CopySharedRecipeResponse>(
+    `/v1/recipes/shared/${encodeURIComponent(token)}/copy`,
+  );
+  return data;
+}
+
 export function buildShareUrl(token: string): string {
   return `${window.location.origin}/share/${token}`;
 }
