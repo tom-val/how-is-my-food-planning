@@ -6,6 +6,7 @@ using FoodPlanning.Api.Features.GeneralShopping;
 using FoodPlanning.Api.Features.Planner;
 using FoodPlanning.Api.Features.Recipes;
 using FoodPlanning.Api.Features.Shopping;
+using FoodPlanning.Api.Features.ShoppingCategories;
 using FoodPlanning.Api.Shared;
 using FoodPlanning.Api.Shared.Database;
 using FoodPlanning.Api.Shared.Middleware;
@@ -65,6 +66,7 @@ builder.Services.AddScoped<IAiRecipeJobRepository, AiRecipeJobRepository>();
 builder.Services.AddScoped<IPlannerRepository, PlannerRepository>();
 builder.Services.AddScoped<IShoppingRepository, ShoppingRepository>();
 builder.Services.AddScoped<IGeneralShoppingRepository, GeneralShoppingRepository>();
+builder.Services.AddScoped<IShoppingCategoryRepository, ShoppingCategoryRepository>();
 
 var app = builder.Build();
 
@@ -86,5 +88,6 @@ app.MapRecipeEndpoints();
 app.MapPlannerEndpoints();
 app.MapShoppingEndpoints();
 app.MapGeneralShoppingEndpoints();
+app.MapShoppingCategoryEndpoints();
 
 app.Run();

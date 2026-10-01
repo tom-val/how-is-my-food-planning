@@ -12,10 +12,20 @@ import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
 import { Modal } from "../../components/sage/Modal";
 import { BottomSheet } from "../../components/sage/BottomSheet";
+import { GroupedShoppingItems } from "./GroupedShoppingItems";
+import { AiSortButton } from "./AiSortButton";
+import {
+  GENERAL_SHOPPING_KEY as KEY,
+  useShoppingCategories,
+} from "./useShoppingCategories";
 
-const KEY = ["general-shopping"];
+interface GeneralShoppingListProps {
+  onManageCategories: () => void;
+}
 
-export default function GeneralShoppingList() {
+export default function GeneralShoppingList({
+  onManageCategories,
+}: GeneralShoppingListProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
@@ -29,6 +39,7 @@ export default function GeneralShoppingList() {
     queryKey: KEY,
     queryFn: getGeneralShoppingList,
   });
+  const { categories, isLoading: isCategoriesLoading } = useShoppingCategories();
 
   const items = data ?? [];
   const total = items.length;
@@ -78,7 +89,7 @@ export default function GeneralShoppingList() {
     },
   });
 
-  if (isLoading) return <Spinner />;
+  if (isLoading || isCategoriesLoading) return <Spinner />;
 
   return (
     <>
@@ -150,6 +161,15 @@ export default function GeneralShoppingList() {
         </div>
       )}
 
+      {total > 0 && (
+        <AiSortButton
+          list="general"
+          itemCount={total}
+          categoryCount={categories.length}
+          onManageCategories={onManageCategories}
+        />
+      )}
+
       <button
         type="button"
         className="fp-additem no-print"
@@ -167,10 +187,15 @@ export default function GeneralShoppingList() {
           <div className="fp-emptystate-title">{t("generalShopping.empty")}</div>
         </div>
       ) : (
-        <div className="fp-shop-list">
-          {items.map((item) => (
+        <GroupedShoppingItems
+          items={items}
+          categories={categories}
+          getId={(item) => item.id}
+          getName={(item) => item.itemName}
+          getCategoryId={(item) => item.categoryId}
+          isChecked={(item) => item.isChecked}
+          renderItem={(item, moveAction) => (
             <div
-              key={item.id}
               className={`fp-shop-item ${item.isChecked ? "is-done" : ""}`}
               onClick={() =>
                 toggleMutation.mutate({
@@ -190,20 +215,23 @@ export default function GeneralShoppingList() {
                   </span>
                 )}
               </span>
-              <button
-                type="button"
-                className="fp-icon-btn no-print"
-                aria-label={t("common.delete")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPendingDelete(item);
-                }}
-              >
-                <Icon.Trash />
-              </button>
+              <span className="fp-shop-item-end">
+                {moveAction}
+                <button
+                  type="button"
+                  className="fp-icon-btn no-print"
+                  aria-label={t("common.delete")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPendingDelete(item);
+                  }}
+                >
+                  <Icon.Trash />
+                </button>
+              </span>
             </div>
-          ))}
-        </div>
+          )}
+        />
       )}
 
       <BottomSheet

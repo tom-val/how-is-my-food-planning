@@ -19,8 +19,17 @@ import {
   weekOffsetLabel,
   weekRangeLabel,
 } from "../../components/sage/dateUtils";
+import { GroupedShoppingItems } from "./GroupedShoppingItems";
+import { AiSortButton } from "./AiSortButton";
+import { useShoppingCategories } from "./useShoppingCategories";
 
-export default function WeeklyShoppingList() {
+interface WeeklyShoppingListProps {
+  onManageCategories: () => void;
+}
+
+export default function WeeklyShoppingList({
+  onManageCategories,
+}: WeeklyShoppingListProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [weekOffset, setWeekOffset] = useState(() => {
@@ -72,6 +81,8 @@ export default function WeeklyShoppingList() {
     queryFn: () => getShoppingList(planId!),
     enabled: !!planId,
   });
+
+  const { categories, isLoading: isCategoriesLoading } = useShoppingCategories();
 
   const items = shoppingData?.items ?? [];
   const recipeMappings = shoppingData?.recipeMappings ?? [];
@@ -142,7 +153,7 @@ export default function WeeklyShoppingList() {
     },
   });
 
-  if (isPlanLoading || isItemsLoading) return <Spinner />;
+  if (isPlanLoading || isItemsLoading || isCategoriesLoading) return <Spinner />;
 
   const summaryTitle =
     total === 0
@@ -252,6 +263,16 @@ export default function WeeklyShoppingList() {
         </div>
       )}
 
+      {total > 0 && (
+        <AiSortButton
+          list="weekly"
+          planId={planId}
+          itemCount={total}
+          categoryCount={categories.length}
+          onManageCategories={onManageCategories}
+        />
+      )}
+
       <button
         type="button"
         className="fp-additem no-print"
@@ -270,12 +291,17 @@ export default function WeeklyShoppingList() {
           <div className="fp-emptystate-title">{t("shopping.empty")}</div>
         </div>
       ) : (
-        <div className="fp-shop-list">
-          {items.map((item) => {
+        <GroupedShoppingItems
+          items={items}
+          categories={categories}
+          getId={(item) => item.id}
+          getName={(item) => item.ingredientName}
+          getCategoryId={(item) => item.categoryId}
+          isChecked={(item) => item.isChecked}
+          renderItem={(item, moveAction) => {
             const sources = getRecipesFor(item.ingredientName, item.unit);
             return (
               <div
-                key={item.id}
                 className={`fp-shop-item ${item.isChecked ? "is-done" : ""}`}
                 onClick={() =>
                   toggleMutation.mutate({
@@ -295,15 +321,22 @@ export default function WeeklyShoppingList() {
                     </span>
                   )}
                 </span>
-                {sources.length > 0 && (
-                  <span className="fp-shop-recipe" title={sources.join(", ")}>
-                    {sources.length === 1 ? sources[0] : `${sources[0]} +${sources.length - 1}`}
+                {(sources.length > 0 || moveAction) && (
+                  <span className="fp-shop-item-end">
+                    {sources.length > 0 && (
+                      <span className="fp-shop-recipe" title={sources.join(", ")}>
+                        {sources.length === 1
+                          ? sources[0]
+                          : `${sources[0]} +${sources.length - 1}`}
+                      </span>
+                    )}
+                    {moveAction}
                   </span>
                 )}
               </div>
             );
-          })}
-        </div>
+          }}
+        />
       )}
 
       <Modal

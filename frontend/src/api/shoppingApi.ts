@@ -8,6 +8,8 @@ export interface ShoppingListItem {
   unit: string | null;
   isChecked: boolean;
   checkedBy: string | null;
+  /** Shopping category id; null when uncategorised. */
+  categoryId: string | null;
 }
 
 export interface IngredientRecipeMapping {

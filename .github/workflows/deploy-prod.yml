@@ -89,7 +89,7 @@ jobs:
 
   backend:
     name: Deploy Backend
-    needs: infra
+    needs: [infra, migrations]
     runs-on: ubuntu-latest
     environment: Prod
     defaults:
@@ -202,7 +202,7 @@ jobs:
 
   ai-processor:
     name: Deploy AI Processor
-    needs: infra
+    needs: [infra, migrations]
     runs-on: ubuntu-latest
     environment: Prod
     defaults:

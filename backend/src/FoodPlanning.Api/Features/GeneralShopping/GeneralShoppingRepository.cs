@@ -10,7 +10,8 @@ public record GeneralShoppingItem(
     decimal? Quantity,
     string? Unit,
     bool IsChecked,
-    string? CheckedBy);
+    string? CheckedBy,
+    Guid? CategoryId);
 
 public interface IGeneralShoppingRepository
 {
@@ -24,6 +25,17 @@ public class GeneralShoppingRepository : IGeneralShoppingRepository
 {
     private readonly DbConnectionFactory _db;
 
+    // Item columns plus the family's remembered category for the item name. Both expect
+    // the item row to be aliased "gsi".
+    private const string ItemColumns =
+        "gsi.id, gsi.family_id, gsi.item_name, gsi.quantity, gsi.unit, gsi.is_checked, gsi.checked_by, sic.category_id";
+
+    private const string CategoryJoin =
+        """
+        LEFT JOIN shopping_item_categories sic
+            ON sic.family_id = gsi.family_id AND sic.item_key = lower(btrim(gsi.item_name))
+        """;
+
     public GeneralShoppingRepository(DbConnectionFactory db)
     {
         _db = db;
@@ -35,11 +47,12 @@ public class GeneralShoppingRepository : IGeneralShoppingRepository
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
-            """
-            SELECT id, family_id, item_name, quantity, unit, is_checked, checked_by
-            FROM general_shopping_items
-            WHERE family_id = @familyId
-            ORDER BY is_checked, item_name
+            $"""
+            SELECT {ItemColumns}
+            FROM general_shopping_items gsi
+            {CategoryJoin}
+            WHERE gsi.family_id = @familyId
+            ORDER BY gsi.is_checked, gsi.item_name
             """, conn);
         cmd.Parameters.AddWithValue("familyId", familyId);
 
@@ -57,10 +70,15 @@ public class GeneralShoppingRepository : IGeneralShoppingRepository
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
-            """
-            INSERT INTO general_shopping_items (family_id, item_name, quantity, unit, created_by)
-            VALUES (@familyId, @name, @quantity, @unit, @createdBy)
-            RETURNING id, family_id, item_name, quantity, unit, is_checked, checked_by
+            $"""
+            WITH inserted AS (
+                INSERT INTO general_shopping_items (family_id, item_name, quantity, unit, created_by)
+                VALUES (@familyId, @name, @quantity, @unit, @createdBy)
+                RETURNING id, family_id, item_name, quantity, unit, is_checked, checked_by
+            )
+            SELECT {ItemColumns}
+            FROM inserted gsi
+            {CategoryJoin}
             """, conn);
         cmd.Parameters.AddWithValue("familyId", familyId);
         cmd.Parameters.AddWithValue("name", itemName);
@@ -114,5 +132,6 @@ public class GeneralShoppingRepository : IGeneralShoppingRepository
         reader.IsDBNull(3) ? null : reader.GetDecimal(3),
         reader.IsDBNull(4) ? null : reader.GetString(4),
         reader.GetBoolean(5),
-        reader.IsDBNull(6) ? null : reader.GetString(6));
+        reader.IsDBNull(6) ? null : reader.GetString(6),
+        reader.IsDBNull(7) ? null : reader.GetGuid(7));
 }

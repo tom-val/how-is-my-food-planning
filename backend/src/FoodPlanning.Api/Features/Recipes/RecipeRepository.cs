@@ -11,7 +11,8 @@ public record Recipe(
     string[] Categories,
     string CreatedBy,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? ShareToken);
 
 public record RecipeIngredient(
     Guid Id,
@@ -22,6 +23,18 @@ public record RecipeIngredient(
 
 public record RecipeWithIngredients(Recipe Recipe, List<RecipeIngredient> Ingredients);
 
+/// <summary>
+/// Public-safe projection of a shared recipe. Deliberately carries no ids,
+/// family, author or timestamps — only what an anonymous viewer needs.
+/// </summary>
+public record PublicRecipe(
+    string Name,
+    string? Instructions,
+    string[] Categories,
+    List<PublicRecipeIngredient> Ingredients);
+
+public record PublicRecipeIngredient(string Name, decimal? Quantity, string? Unit);
+
 public interface IRecipeRepository
 {
     Task<List<RecipeWithIngredients>> GetAllByFamilyAsync(Guid familyId);
@@ -30,6 +43,18 @@ public interface IRecipeRepository
     Task<RecipeWithIngredients?> UpdateAsync(Guid id, Guid familyId, string name, string? instructions, string[] categories, List<IngredientInput> ingredients);
     Task<bool> DeleteAsync(Guid id, Guid familyId);
     Task<List<string>> GetDistinctIngredientNamesAsync(Guid familyId);
+
+    /// <summary>
+    /// Ensures the recipe has a share token and returns it (idempotent: an
+    /// existing token is kept). Returns null if the recipe is not in the family.
+    /// </summary>
+    Task<string?> ShareAsync(Guid id, Guid familyId, string newToken);
+
+    /// <summary>Clears the share token. Returns false if the recipe is not in the family.</summary>
+    Task<bool> UnshareAsync(Guid id, Guid familyId);
+
+    /// <summary>Looks up a shared recipe by token. Not family-scoped: the token is the credential.</summary>
+    Task<PublicRecipe?> GetPublicByShareTokenAsync(string shareToken);
 }
 
 public record IngredientInput(string Name, decimal? Quantity, string? Unit);
@@ -51,7 +76,7 @@ public class RecipeRepository : IRecipeRepository
         // Fetch all recipes for the family.
         await using var recipeCmd = new NpgsqlCommand(
             """
-            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at
+            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at, share_token
             FROM recipes
             WHERE family_id = @familyId
             ORDER BY name
@@ -107,7 +132,7 @@ public class RecipeRepository : IRecipeRepository
 
         await using var recipeCmd = new NpgsqlCommand(
             """
-            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at
+            SELECT id, family_id, name, instructions, categories, created_by, created_at, updated_at, share_token
             FROM recipes
             WHERE id = @id AND family_id = @familyId
             """, conn);
@@ -139,7 +164,7 @@ public class RecipeRepository : IRecipeRepository
             """
             INSERT INTO recipes (family_id, name, instructions, categories, created_by)
             VALUES (@familyId, @name, @instructions, @categories, @userId)
-            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at
+            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at, share_token
             """, conn, tx);
         recipeCmd.Parameters.AddWithValue("familyId", familyId);
         recipeCmd.Parameters.AddWithValue("name", name);
@@ -175,7 +200,7 @@ public class RecipeRepository : IRecipeRepository
             UPDATE recipes
             SET name = @name, instructions = @instructions, categories = @categories, updated_at = now()
             WHERE id = @id AND family_id = @familyId
-            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at
+            RETURNING id, family_id, name, instructions, categories, created_by, created_at, updated_at, share_token
             """, conn, tx);
         recipeCmd.Parameters.AddWithValue("id", id);
         recipeCmd.Parameters.AddWithValue("familyId", familyId);
@@ -267,6 +292,82 @@ public class RecipeRepository : IRecipeRepository
         return names;
     }
 
+    public async Task<string?> ShareAsync(Guid id, Guid familyId, string newToken)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        // COALESCE keeps an existing token, so repeated or concurrent calls all
+        // return the same link (the row lock serialises concurrent updates).
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE recipes
+            SET share_token = COALESCE(share_token, @token)
+            WHERE id = @id AND family_id = @familyId
+            RETURNING share_token
+            """, conn);
+        cmd.Parameters.AddWithValue("id", id);
+        cmd.Parameters.AddWithValue("familyId", familyId);
+        cmd.Parameters.AddWithValue("token", newToken);
+
+        return await cmd.ExecuteScalarAsync() as string;
+    }
+
+    public async Task<bool> UnshareAsync(Guid id, Guid familyId)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE recipes
+            SET share_token = NULL
+            WHERE id = @id AND family_id = @familyId
+            """, conn);
+        cmd.Parameters.AddWithValue("id", id);
+        cmd.Parameters.AddWithValue("familyId", familyId);
+
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<PublicRecipe?> GetPublicByShareTokenAsync(string shareToken)
+    {
+        await using var conn = _db.CreateConnection();
+        await conn.OpenAsync();
+
+        // Select only public-safe columns; the id is used internally to load
+        // ingredients and is never returned.
+        await using var recipeCmd = new NpgsqlCommand(
+            """
+            SELECT id, name, instructions, categories
+            FROM recipes
+            WHERE share_token = @token
+            """, conn);
+        recipeCmd.Parameters.AddWithValue("token", shareToken);
+
+        Guid recipeId;
+        string name;
+        string? instructions;
+        string[] categories;
+        await using (var reader = await recipeCmd.ExecuteReaderAsync())
+        {
+            if (!await reader.ReadAsync())
+                return null;
+
+            recipeId = reader.GetGuid(0);
+            name = reader.GetString(1);
+            instructions = reader.IsDBNull(2) ? null : reader.GetString(2);
+            categories = reader.IsDBNull(3) ? [] : reader.GetFieldValue<string[]>(3);
+        }
+
+        var ingredients = await GetIngredientsAsync(conn, recipeId);
+        return new PublicRecipe(
+            name,
+            instructions,
+            categories,
+            ingredients.Select(i => new PublicRecipeIngredient(i.Name, i.Quantity, i.Unit)).ToList());
+    }
+
     private static async Task<List<RecipeIngredient>> GetIngredientsAsync(NpgsqlConnection conn, Guid recipeId)
     {
         await using var cmd = new NpgsqlCommand(
@@ -294,7 +395,8 @@ public class RecipeRepository : IRecipeRepository
         reader.IsDBNull(4) ? [] : reader.GetFieldValue<string[]>(4),
         reader.GetString(5),
         reader.GetDateTime(6),
-        reader.GetDateTime(7));
+        reader.GetDateTime(7),
+        reader.IsDBNull(8) ? null : reader.GetString(8));
 
     private static RecipeIngredient ReadIngredient(NpgsqlDataReader reader) => new(
         reader.GetGuid(0),

@@ -7,16 +7,15 @@ import { getRecipe, deleteRecipe } from "../../api/recipeApi";
 import { Icon } from "../../components/sage/Icon";
 import { Spinner } from "../../components/sage/Spinner";
 import { Modal } from "../../components/sage/Modal";
-
-function splitTitle(name: string): { head: string; tail: string } {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return { head: "", tail: parts[0] };
-  return { head: parts.slice(0, -1).join(" "), tail: parts.slice(-1)[0] };
-}
-
-function isUrl(text: string): boolean {
-  return /^https?:\/\//i.test(text.trim());
-}
+import {
+  RecipeCategoryTags,
+  RecipeIngredientList,
+  RecipeInstructions,
+  RecipeTitle,
+} from "./RecipeContent";
+import { RecipeShareDialog } from "./RecipeShareDialog";
+import { LinkIcon, ShareIcon } from "./shareIcons";
+import { useRecipeSharing } from "./useRecipeSharing";
 
 export default function RecipeDetailPage() {
   const { t } = useTranslation();
@@ -25,6 +24,8 @@ export default function RecipeDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const sharing = useRecipeSharing(id!);
 
   const { data, isLoading } = useQuery({
     queryKey: ["recipes", id],
@@ -53,8 +54,13 @@ export default function RecipeDetailPage() {
   }
 
   const { recipe, ingredients } = data;
-  const { head, tail } = splitTitle(recipe.name);
-  const instructionsIsLink = recipe.instructions && isUrl(recipe.instructions);
+  const isShared = !!recipe.shareToken;
+
+  const openShare = () => {
+    // Create the link up front (idempotent on the server) so the dialog can show it.
+    if (!recipe.shareToken) sharing.share.mutate();
+    setShareOpen(true);
+  };
 
   return (
     <div className="fp-main-wide">
@@ -68,19 +74,27 @@ export default function RecipeDetailPage() {
             <Icon.ArrowLeft />
             {t("recipes.backToAll")}
           </button>
-          <h1>
-            {head && <>{head} </>}
-            <em>{tail}</em>
-          </h1>
+          <RecipeTitle name={recipe.name} />
           <div className="fp-recipe-hero-tags">
-            {recipe.categories.map((c) => (
-              <span key={c} className="fp-recipe-meta-tag">
-                {t(`planner.${c}`)}
-              </span>
-            ))}
+            <RecipeCategoryTags categories={recipe.categories} />
+            {isShared && (
+              <button
+                type="button"
+                className="fp-recipe-meta-tag fp-recipe-shared-tag"
+                onClick={openShare}
+                title={t("share.sharedHint")}
+              >
+                <LinkIcon />
+                {t("share.sharedBadge")}
+              </button>
+            )}
           </div>
         </div>
         <div className="fp-recipe-hero-actions">
+          <button type="button" className="fp-btn fp-btn-ghost" onClick={openShare}>
+            <ShareIcon />
+            {t("share.button")}
+          </button>
           <button
             type="button"
             className="fp-btn fp-btn-ghost"
@@ -100,36 +114,12 @@ export default function RecipeDetailPage() {
         </div>
       </div>
 
-      <div className="fp-section-title">
-        {t("recipes.ingredients")} <span className="count">{ingredients.length}</span>
-      </div>
-      <div className="fp-ingredients">
-        {ingredients.map((ing) => (
-          <div className="fp-ingredient" key={ing.id}>
-            <span className="fp-ingredient-name">{ing.name}</span>
-            <span className="fp-ingredient-qty">{ing.quantity ?? "—"}</span>
-            <span className="fp-ingredient-unit">{ing.unit ?? ""}</span>
-          </div>
-        ))}
-      </div>
+      <RecipeIngredientList ingredients={ingredients} />
 
       {recipe.instructions ? (
         <>
           <div className="fp-section-title">{t("recipes.instructions")}</div>
-          <div className="fp-instructions">
-            {instructionsIsLink ? (
-              <a
-                href={recipe.instructions}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Icon.External />
-                {recipe.instructions}
-              </a>
-            ) : (
-              recipe.instructions
-            )}
-          </div>
+          <RecipeInstructions text={recipe.instructions} />
         </>
       ) : (
         <>
@@ -148,6 +138,14 @@ export default function RecipeDetailPage() {
           </div>
         </>
       )}
+
+      <RecipeShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        recipeName={recipe.name}
+        shareToken={recipe.shareToken}
+        sharing={sharing}
+      />
 
       <Modal
         open={deleteOpen}

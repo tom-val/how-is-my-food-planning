@@ -10,7 +10,8 @@ public record ShoppingListItem(
     decimal? TotalQuantity,
     string? Unit,
     bool IsChecked,
-    string? CheckedBy);
+    string? CheckedBy,
+    Guid? CategoryId);
 
 public record AggregatedIngredient(string Name, decimal? TotalQuantity, string? Unit);
 
@@ -23,14 +24,26 @@ public interface IShoppingRepository
     Task<List<ShoppingListItem>> GetByPlanIdAsync(Guid planId);
     Task<List<ShoppingListItem>> GenerateAsync(Guid planId);
     Task<ShoppingListItem> AddCustomItemAsync(Guid planId, string ingredientName, decimal? quantity, string? unit);
-    Task<bool> DeleteItemAsync(Guid itemId);
-    Task<bool> ToggleItemAsync(Guid itemId, bool isChecked, string userId);
+    Task<bool> DeleteItemAsync(Guid itemId, Guid familyId);
+    Task<bool> ToggleItemAsync(Guid itemId, Guid familyId, bool isChecked, string userId);
     Task<List<IngredientRecipeMapping>> GetRecipeMappingsAsync(Guid planId);
 }
 
 public class ShoppingRepository : IShoppingRepository
 {
     private readonly DbConnectionFactory _db;
+
+    // Item columns plus the family's remembered category for the item name (the family
+    // comes from the item's weekly plan). Both expect the item row to be aliased "sli".
+    private const string ItemColumns =
+        "sli.id, sli.weekly_plan_id, sli.ingredient_name, sli.total_quantity, sli.unit, sli.is_checked, sli.checked_by, sic.category_id";
+
+    private const string CategoryJoin =
+        """
+        JOIN weekly_plans wp ON wp.id = sli.weekly_plan_id
+        LEFT JOIN shopping_item_categories sic
+            ON sic.family_id = wp.family_id AND sic.item_key = lower(btrim(sli.ingredient_name))
+        """;
 
     public ShoppingRepository(DbConnectionFactory db)
     {
@@ -43,11 +56,12 @@ public class ShoppingRepository : IShoppingRepository
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
-            """
-            SELECT id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
-            FROM shopping_list_items
-            WHERE weekly_plan_id = @planId
-            ORDER BY is_checked, ingredient_name
+            $"""
+            SELECT {ItemColumns}
+            FROM shopping_list_items sli
+            {CategoryJoin}
+            WHERE sli.weekly_plan_id = @planId
+            ORDER BY sli.is_checked, sli.ingredient_name
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
 
@@ -71,10 +85,11 @@ public class ShoppingRepository : IShoppingRepository
         // Load existing items to preserve checkbox state.
         var existing = new Dictionary<string, ShoppingListItem>();
         await using (var existingCmd = new NpgsqlCommand(
-            """
-            SELECT id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
-            FROM shopping_list_items
-            WHERE weekly_plan_id = @planId
+            $"""
+            SELECT {ItemColumns}
+            FROM shopping_list_items sli
+            {CategoryJoin}
+            WHERE sli.weekly_plan_id = @planId
             """, conn, tx))
         {
             existingCmd.Parameters.AddWithValue("planId", planId);
@@ -103,10 +118,15 @@ public class ShoppingRepository : IShoppingRepository
             var checkedBy = wasChecked ? prev!.CheckedBy : null;
 
             await using var insertCmd = new NpgsqlCommand(
-                """
-                INSERT INTO shopping_list_items (weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by)
-                VALUES (@planId, @name, @quantity, @unit, @isChecked, @checkedBy)
-                RETURNING id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
+                $"""
+                WITH inserted AS (
+                    INSERT INTO shopping_list_items (weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by)
+                    VALUES (@planId, @name, @quantity, @unit, @isChecked, @checkedBy)
+                    RETURNING id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
+                )
+                SELECT {ItemColumns}
+                FROM inserted sli
+                {CategoryJoin}
                 """, conn, tx);
             insertCmd.Parameters.AddWithValue("planId", planId);
             insertCmd.Parameters.AddWithValue("name", agg.Name);
@@ -132,10 +152,15 @@ public class ShoppingRepository : IShoppingRepository
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
-            """
-            INSERT INTO shopping_list_items (weekly_plan_id, ingredient_name, total_quantity, unit)
-            VALUES (@planId, @name, @quantity, @unit)
-            RETURNING id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
+            $"""
+            WITH inserted AS (
+                INSERT INTO shopping_list_items (weekly_plan_id, ingredient_name, total_quantity, unit)
+                VALUES (@planId, @name, @quantity, @unit)
+                RETURNING id, weekly_plan_id, ingredient_name, total_quantity, unit, is_checked, checked_by
+            )
+            SELECT {ItemColumns}
+            FROM inserted sli
+            {CategoryJoin}
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
         cmd.Parameters.AddWithValue("name", ingredientName);
@@ -149,19 +174,25 @@ public class ShoppingRepository : IShoppingRepository
         return ReadItem(reader);
     }
 
-    public async Task<bool> DeleteItemAsync(Guid itemId)
+    // Items have no family_id of their own, so they are scoped to the family via their weekly plan.
+    public async Task<bool> DeleteItemAsync(Guid itemId, Guid familyId)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(
-            "DELETE FROM shopping_list_items WHERE id = @itemId", conn);
+            """
+            DELETE FROM shopping_list_items
+            WHERE id = @itemId
+              AND weekly_plan_id IN (SELECT id FROM weekly_plans WHERE family_id = @familyId)
+            """, conn);
         cmd.Parameters.AddWithValue("itemId", itemId);
+        cmd.Parameters.AddWithValue("familyId", familyId);
 
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<bool> ToggleItemAsync(Guid itemId, bool isChecked, string userId)
+    public async Task<bool> ToggleItemAsync(Guid itemId, Guid familyId, bool isChecked, string userId)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
@@ -171,8 +202,10 @@ public class ShoppingRepository : IShoppingRepository
             UPDATE shopping_list_items
             SET is_checked = @isChecked, checked_by = CASE WHEN @isChecked THEN @userId ELSE NULL END
             WHERE id = @itemId
+              AND weekly_plan_id IN (SELECT id FROM weekly_plans WHERE family_id = @familyId)
             """, conn);
         cmd.Parameters.AddWithValue("itemId", itemId);
+        cmd.Parameters.AddWithValue("familyId", familyId);
         cmd.Parameters.AddWithValue("isChecked", isChecked);
         cmd.Parameters.AddWithValue("userId", userId);
 
@@ -245,5 +278,6 @@ public class ShoppingRepository : IShoppingRepository
         reader.IsDBNull(3) ? null : reader.GetDecimal(3),
         reader.IsDBNull(4) ? null : reader.GetString(4),
         reader.GetBoolean(5),
-        reader.IsDBNull(6) ? null : reader.GetString(6));
+        reader.IsDBNull(6) ? null : reader.GetString(6),
+        reader.IsDBNull(7) ? null : reader.GetGuid(7));
 }

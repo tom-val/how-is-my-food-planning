@@ -9,6 +9,14 @@ namespace FoodPlanning.Api.Shared.Middleware;
 /// </summary>
 public class AuthorizerContextMiddleware
 {
+    /// <summary>
+    /// Path prefix for anonymous endpoints (e.g. shared recipes). Requests under
+    /// it are passed through WITHOUT a userId: <c>GetUserId()</c> throws there,
+    /// so an authenticated endpoint accidentally mapped under this prefix fails
+    /// closed (401) rather than exposing data.
+    /// </summary>
+    public const string PublicPathPrefix = "/v1/public";
+
     private readonly RequestDelegate _next;
     private readonly ILogger<AuthorizerContextMiddleware> _logger;
 
@@ -20,8 +28,10 @@ public class AuthorizerContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Path.StartsWithSegments("/health"))
+        if (IsPublicPath(context.Request.Path))
         {
+            // Deliberately do not read or set the authorizer userId here, even
+            // if one is present: public handlers must not depend on identity.
             await _next(context);
             return;
         }
@@ -41,4 +51,8 @@ public class AuthorizerContextMiddleware
         context.Items["UserId"] = userId;
         await _next(context);
     }
+
+    // StartsWithSegments matches whole segments only, so "/v1/publicity" is not public.
+    public static bool IsPublicPath(PathString path) =>
+        path.StartsWithSegments("/health") || path.StartsWithSegments(PublicPathPrefix);
 }

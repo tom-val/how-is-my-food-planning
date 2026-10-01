@@ -58,14 +58,17 @@ public static class ShoppingEndpoints
         return Results.Ok(new ShoppingListResponse(items, mappings));
     }
 
-    private static async Task<IResult> ToggleItem(
+    public static async Task<IResult> ToggleItem(
         Guid id,
         ToggleRequest request,
         IShoppingRepository repository,
+        IFamilyMembershipService membership,
         HttpContext context)
     {
         var userId = context.GetUserId();
-        var updated = await repository.ToggleItemAsync(id, request.IsChecked, userId);
+        var member = await membership.RequireMembershipAsync(userId);
+
+        var updated = await repository.ToggleItemAsync(id, member.FamilyId, request.IsChecked, userId);
 
         return updated
             ? Results.NoContent()
@@ -94,16 +97,16 @@ public static class ShoppingEndpoints
         return Results.Created($"/v1/shopping-list-items/{item.Id}", item);
     }
 
-    private static async Task<IResult> DeleteItem(
+    public static async Task<IResult> DeleteItem(
         Guid id,
         IShoppingRepository repository,
+        IFamilyMembershipService membership,
         HttpContext context)
     {
         var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
 
-        await using var conn = new Npgsql.NpgsqlConnection();
-        // Simple delete — the item ID is enough.
-        var deleted = await repository.DeleteItemAsync(id);
+        var deleted = await repository.DeleteItemAsync(id, member.FamilyId);
         return deleted
             ? Results.NoContent()
             : Results.NotFound(new { error = "Item not found." });

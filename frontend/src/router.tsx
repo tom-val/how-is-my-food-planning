@@ -19,6 +19,7 @@ const ShoppingListPage = lazy(
 );
 const FamilyPage = lazy(() => import("./features/family/FamilyPage"));
 const JoinByLinkPage = lazy(() => import("./features/family/JoinByLinkPage"));
+const PublicRecipePage = lazy(() => import("./features/recipes/PublicRecipePage"));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<Spinner />}>{children}</Suspense>;
@@ -46,6 +47,16 @@ export const router = createBrowserRouter([
     element: (
       <SuspenseWrapper>
         <ForgotPassword />
+      </SuspenseWrapper>
+    ),
+  },
+  // Public, read-only shared recipe: deliberately outside RequireAuth/AppLayout
+  // so logged-out visitors can open it without being redirected to /login.
+  {
+    path: "/share/:token",
+    element: (
+      <SuspenseWrapper>
+        <PublicRecipePage />
       </SuspenseWrapper>
     ),
   },

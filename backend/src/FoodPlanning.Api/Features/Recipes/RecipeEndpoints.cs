@@ -24,6 +24,11 @@ public static class RecipeEndpoints
         group.MapGet("/{id:guid}", GetRecipe);
         group.MapPut("/{id:guid}", UpdateRecipe);
         group.MapDelete("/{id:guid}", DeleteRecipe);
+        group.MapPost("/{id:guid}/share", ShareRecipe);
+        group.MapDelete("/{id:guid}/share", UnshareRecipe);
+
+        // Anonymous, read-only access to shared recipes (/v1/public/recipes/{token}).
+        app.MapPublicRecipeEndpoints();
     }
 
     private static async Task<IResult> ListRecipes(
@@ -123,6 +128,37 @@ public static class RecipeEndpoints
             : Results.NotFound(new { error = "Recipe not found." });
     }
 
+    private static async Task<IResult> ShareRecipe(
+        Guid id,
+        IRecipeRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        // Idempotent: if the recipe is already shared, the existing token is returned.
+        var shareToken = await repository.ShareAsync(id, member.FamilyId, RecipeShareTokens.Generate());
+        return shareToken is null
+            ? Results.NotFound(new { error = "Recipe not found." })
+            : Results.Ok(new ShareRecipeResponse(shareToken));
+    }
+
+    private static async Task<IResult> UnshareRecipe(
+        Guid id,
+        IRecipeRepository repository,
+        IFamilyMembershipService membership,
+        HttpContext context)
+    {
+        var userId = context.GetUserId();
+        var member = await membership.RequireMembershipAsync(userId);
+
+        var found = await repository.UnshareAsync(id, member.FamilyId);
+        return found
+            ? Results.NoContent()
+            : Results.NotFound(new { error = "Recipe not found." });
+    }
+
     private static async Task<IResult> AiStart(
         AiSuggestRequest request,
         IAiRecipeJobRepository jobRepository,
@@ -182,16 +218,16 @@ public static class RecipeEndpoints
         return Results.Accepted(value: new { jobId });
     }
 
-    private static async Task<IResult> AiPoll(
+    public static async Task<IResult> AiPoll(
         Guid jobId,
         IAiRecipeJobRepository jobRepository,
         IFamilyMembershipService membership,
         HttpContext context)
     {
         var userId = context.GetUserId();
-        await membership.RequireMembershipAsync(userId);
+        var member = await membership.RequireMembershipAsync(userId);
 
-        var job = await jobRepository.GetJobAsync(jobId);
+        var job = await jobRepository.GetJobAsync(jobId, member.FamilyId);
         if (job is null)
             return Results.NotFound(new { error = "Job not found." });
 

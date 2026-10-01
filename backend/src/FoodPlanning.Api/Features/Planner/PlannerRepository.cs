@@ -27,11 +27,13 @@ public record WeeklyPlanWithMeals(WeeklyPlan Plan, List<PlannedMeal> Meals);
 public interface IPlannerRepository
 {
     Task<WeeklyPlanWithMeals> GetOrCreateAsync(Guid familyId, DateOnly weekStart, string userId);
-    Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow);
+    /// <summary>Returns null if the recipe is not in the family.</summary>
+    Task<PlannedMeal?> AddMealAsync(Guid planId, Guid familyId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow);
     Task<PlannedMeal> AddCustomMealAsync(Guid planId, int dayOfWeek, string mealType, string customName);
     Task<bool> RemoveMealAsync(Guid planId, Guid mealId);
     Task<Guid?> GetPlanFamilyIdAsync(Guid planId);
-    Task<PlannedMeal> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow);
+    /// <summary>Returns null if the recipe is not in the family.</summary>
+    Task<PlannedMeal?> ScheduleMealAsync(Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow);
     Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName);
 }
 
@@ -91,24 +93,31 @@ public class PlannerRepository : IPlannerRepository
         return new WeeklyPlanWithMeals(plan, meals);
     }
 
-    public async Task<PlannedMeal> AddMealAsync(Guid planId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow)
+    public async Task<PlannedMeal?> AddMealAsync(Guid planId, Guid familyId, int dayOfWeek, string mealType, Guid recipeId, bool isShadow)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
 
+        // Selecting from recipes scopes the recipe to the family: no row is inserted (and
+        // null returned) when the recipe belongs to another family, so its name and
+        // ingredients cannot leak through this family's plan or shopping list.
         await using var cmd = new NpgsqlCommand(
             """
             INSERT INTO planned_meals (weekly_plan_id, day_of_week, meal_type, recipe_id, is_shadow)
-            VALUES (@planId, @dayOfWeek, @mealType, @recipeId, @isShadow)
+            SELECT @planId, @dayOfWeek, @mealType, r.id, @isShadow
+            FROM recipes r
+            WHERE r.id = @recipeId AND r.family_id = @familyId
             RETURNING id
             """, conn);
         cmd.Parameters.AddWithValue("planId", planId);
+        cmd.Parameters.AddWithValue("familyId", familyId);
         cmd.Parameters.AddWithValue("dayOfWeek", (short)dayOfWeek);
         cmd.Parameters.AddWithValue("mealType", mealType);
         cmd.Parameters.AddWithValue("recipeId", recipeId);
         cmd.Parameters.AddWithValue("isShadow", isShadow);
 
-        var mealId = (Guid)(await cmd.ExecuteScalarAsync())!;
+        if (await cmd.ExecuteScalarAsync() is not Guid mealId)
+            return null;
 
         // Fetch with recipe name.
         await using var fetchCmd = new NpgsqlCommand(
@@ -181,7 +190,7 @@ public class PlannerRepository : IPlannerRepository
         return result is Guid familyId ? familyId : null;
     }
 
-    public async Task<PlannedMeal> ScheduleMealAsync(
+    public async Task<PlannedMeal?> ScheduleMealAsync(
         Guid familyId, string userId, DateOnly date, string mealType, Guid recipeId, bool isShadow)
     {
         // Calculate the Monday of the target week and the day index (0=Mon).
@@ -192,7 +201,7 @@ public class PlannerRepository : IPlannerRepository
         var planWithMeals = await GetOrCreateAsync(familyId, monday, userId);
 
         // Add the meal.
-        return await AddMealAsync(planWithMeals.Plan.Id, dayOfWeekIndex, mealType, recipeId, isShadow);
+        return await AddMealAsync(planWithMeals.Plan.Id, familyId, dayOfWeekIndex, mealType, recipeId, isShadow);
     }
 
     public async Task<WeeklyPlan> AssignPlanAsync(Guid planId, string? assignedTo, string? assignedName)

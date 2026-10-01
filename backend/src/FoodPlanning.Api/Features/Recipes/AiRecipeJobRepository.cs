@@ -15,7 +15,7 @@ public interface IAiRecipeJobRepository
 {
     Task<Guid> CreateJobAsync(Guid familyId, string userId, List<AiMessage> messages);
     Task<Guid> CreateImageJobAsync(Guid familyId, string userId, string imageBase64);
-    Task<AiRecipeJob?> GetJobAsync(Guid jobId);
+    Task<AiRecipeJob?> GetJobAsync(Guid jobId, Guid familyId);
     Task<(Guid Id, Guid FamilyId, string UserId, List<AiMessage> Messages)?> GetPendingJobAsync(Guid jobId);
     Task<string?> GetJobImageAsync(Guid jobId);
     Task CompleteJobAsync(Guid jobId, AiSuggestResponse response);
@@ -87,14 +87,20 @@ public class AiRecipeJobRepository : IAiRecipeJobRepository
         return result as string;
     }
 
-    public async Task<AiRecipeJob?> GetJobAsync(Guid jobId)
+    public async Task<AiRecipeJob?> GetJobAsync(Guid jobId, Guid familyId)
     {
         await using var conn = _db.CreateConnection();
         await conn.OpenAsync();
 
+        // The table also holds shopping list categorise jobs, which are not readable here.
         await using var cmd = new NpgsqlCommand(
-            "SELECT id, status, response_body, error FROM ai_recipe_jobs WHERE id = @id", conn);
+            """
+            SELECT id, status, response_body, error
+            FROM ai_recipe_jobs
+            WHERE id = @id AND family_id = @familyId AND job_type = 'recipe'
+            """, conn);
         cmd.Parameters.AddWithValue("id", jobId);
+        cmd.Parameters.AddWithValue("familyId", familyId);
 
         await using var reader = await cmd.ExecuteReaderAsync();
         if (!await reader.ReadAsync())

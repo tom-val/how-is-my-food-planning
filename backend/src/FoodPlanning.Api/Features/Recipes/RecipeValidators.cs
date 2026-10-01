@@ -4,6 +4,7 @@ namespace FoodPlanning.Api.Features.Recipes;
 
 public record CreateRecipeRequest(string Name, string? Instructions, string[] Categories, List<IngredientInput> Ingredients);
 public record UpdateRecipeRequest(string Name, string? Instructions, string[] Categories, List<IngredientInput> Ingredients);
+public record ShareRecipeResponse(string ShareToken);
 
 public class CreateRecipeValidator : AbstractValidator<CreateRecipeRequest>
 {

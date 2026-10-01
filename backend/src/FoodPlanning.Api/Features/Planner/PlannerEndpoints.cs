@@ -38,7 +38,7 @@ public static class PlannerEndpoints
         return Results.Ok(plan);
     }
 
-    private static async Task<IResult> AddMeal(
+    public static async Task<IResult> AddMeal(
         Guid id,
         AddMealRequest request,
         IValidator<AddMealRequest> validator,
@@ -57,8 +57,12 @@ public static class PlannerEndpoints
         if (planFamilyId is null || planFamilyId != member.FamilyId)
             return Results.NotFound(new { error = "Plan not found." });
 
-        var meal = await repository.AddMealAsync(id, request.DayOfWeek, request.MealType, request.RecipeId, request.IsShadow);
-        return Results.Created($"/v1/plans/{id}/meals/{meal.Id}", meal);
+        var meal = await repository.AddMealAsync(
+            id, member.FamilyId, request.DayOfWeek, request.MealType, request.RecipeId, request.IsShadow);
+
+        return meal is null
+            ? Results.NotFound(new { error = "Recipe not found." })
+            : Results.Created($"/v1/plans/{id}/meals/{meal.Id}", meal);
     }
 
     private static async Task<IResult> AddCustomMeal(
@@ -104,7 +108,7 @@ public static class PlannerEndpoints
             : Results.NotFound(new { error = "Meal not found." });
     }
 
-    private static async Task<IResult> ScheduleMeal(
+    public static async Task<IResult> ScheduleMeal(
         ScheduleMealRequest request,
         IValidator<ScheduleMealRequest> validator,
         IPlannerRepository repository,
@@ -122,7 +126,9 @@ public static class PlannerEndpoints
         var meal = await repository.ScheduleMealAsync(
             member.FamilyId, userId, date, request.MealType, request.RecipeId, request.IsShadow);
 
-        return Results.Created($"/v1/plans/{meal.WeeklyPlanId}/meals/{meal.Id}", meal);
+        return meal is null
+            ? Results.NotFound(new { error = "Recipe not found." })
+            : Results.Created($"/v1/plans/{meal.WeeklyPlanId}/meals/{meal.Id}", meal);
     }
 
     private static async Task<IResult> AssignPlan(

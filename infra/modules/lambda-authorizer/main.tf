@@ -89,9 +89,23 @@ resource "aws_lambda_permission" "api_gateway_authorizer" {
 }
 
 # --- Public routes (no authorizer) ---
+# API Gateway prefers these more specific routes over $default, so they skip
+# the JWT authorizer. Keep them read-only and narrowly scoped: anything not
+# matched here (e.g. extra path segments or other methods) falls through to
+# $default and is authorised as usual. The API Lambda's invoke permission
+# (execution_arn/*/*) already covers these routes.
 
 resource "aws_apigatewayv2_route" "health" {
   api_id    = var.api_id
   route_key = "GET /health"
+  target    = "integrations/${var.lambda_integration_id}"
+}
+
+# Read-only view of a publicly shared recipe. The unguessable share token in
+# the path is the only credential; the API validates its shape and returns a
+# public-safe projection (no ids, family or author data).
+resource "aws_apigatewayv2_route" "public_recipe" {
+  api_id    = var.api_id
+  route_key = "GET /v1/public/recipes/{token}"
   target    = "integrations/${var.lambda_integration_id}"
 }

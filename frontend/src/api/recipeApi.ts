@@ -1,3 +1,4 @@
+import axios from "axios";
 import apiClient from "./client";
 
 export interface RecipeIngredient {
@@ -17,6 +18,8 @@ export interface Recipe {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  /** Set while the recipe is publicly shared; null when it is not. */
+  shareToken: string | null;
 }
 
 export interface RecipeWithIngredients {
@@ -131,4 +134,52 @@ export async function updateRecipe(
 
 export async function deleteRecipe(id: string): Promise<void> {
   await apiClient.delete(`/v1/recipes/${id}`);
+}
+
+// --- Public sharing ---
+
+export interface ShareRecipeResponse {
+  shareToken: string;
+}
+
+/** Creates the public link, or returns the existing one if already shared. */
+export async function shareRecipe(id: string): Promise<ShareRecipeResponse> {
+  const { data } = await apiClient.post<ShareRecipeResponse>(
+    `/v1/recipes/${id}/share`,
+  );
+  return data;
+}
+
+/** Revokes the public link; the old URL stops working immediately. */
+export async function unshareRecipe(id: string): Promise<void> {
+  await apiClient.delete(`/v1/recipes/${id}/share`);
+}
+
+export interface PublicRecipeIngredient {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+}
+
+export interface PublicRecipe {
+  name: string;
+  instructions: string | null;
+  categories: string[];
+  ingredients: PublicRecipeIngredient[];
+}
+
+// Bare client for anonymous endpoints: same API base URL but none of
+// apiClient's interceptors, so no Cognito session lookup happens and no
+// Authorization header is ever sent, whether or not the viewer is signed in.
+const publicClient = axios.create({ baseURL: apiClient.defaults.baseURL });
+
+export async function getPublicRecipe(token: string): Promise<PublicRecipe> {
+  const { data } = await publicClient.get<PublicRecipe>(
+    `/v1/public/recipes/${encodeURIComponent(token)}`,
+  );
+  return data;
+}
+
+export function buildShareUrl(token: string): string {
+  return `${window.location.origin}/share/${token}`;
 }
