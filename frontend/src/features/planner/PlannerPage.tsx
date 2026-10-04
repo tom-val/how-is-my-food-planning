@@ -212,12 +212,13 @@ export default function PlannerPage() {
     setTimeout(() => setToast(null), 2400);
   };
 
-  const handlePickRecipe = (recipe: RecipeWithIngredients) => {
+  const handlePickRecipe = (recipe: RecipeWithIngredients, isShadow: boolean) => {
     if (!addAnchor) return;
     addMutation.mutate({
       dayOfWeek: addAnchor.dayOfWeek,
       slot: addAnchor.slot,
       recipeId: recipe.recipe.id,
+      isShadow,
     });
     setAddAnchor(null);
   };

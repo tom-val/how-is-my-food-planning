@@ -9,7 +9,7 @@ interface AddPickerProps {
   slot: string;
   dayName: string;
   recipes: RecipeWithIngredients[];
-  onPick: (recipe: RecipeWithIngredients) => void;
+  onPick: (recipe: RecipeWithIngredients, isShadow: boolean) => void;
   onPickCustom: (name: string) => void;
   onCreateNew: (prefilledName: string | null) => void;
   onClose: () => void;
@@ -27,6 +27,7 @@ export function AddPicker({
 }: AddPickerProps) {
   const { t } = useTranslation();
   const [q, setQ] = useState("");
+  const [isShadow, setIsShadow] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function AddPicker({
             onKeyDown={(e) => {
               if (e.key === "Escape") onClose();
               if (e.key === "Enter") {
-                if (filtered[0]) onPick(filtered[0]);
+                if (filtered[0]) onPick(filtered[0], isShadow);
                 else if (q.trim()) onPickCustom(q.trim());
               }
             }}
@@ -85,6 +86,17 @@ export function AddPicker({
             </button>
           )}
         </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isShadow}
+          className={`fp-addpicker-repeat ${isShadow ? "is-on" : ""}`}
+          onClick={() => setIsShadow((v) => !v)}
+        >
+          <Icon.Refresh />
+          <span>{t("planner.shadowCopy")}</span>
+          <span className="fp-shop-filter-switch" aria-hidden="true" />
+        </button>
       </div>
       <div className="fp-addpicker-body">
         {showingSuggestions && filtered.length > 0 && (
@@ -113,7 +125,7 @@ export function AddPicker({
               key={recipe.id}
               type="button"
               className="fp-addpicker-row"
-              onClick={() => onPick({ recipe, ingredients })}
+              onClick={() => onPick({ recipe, ingredients }, isShadow)}
             >
               <span className="fp-addpicker-row-thumb">{letterOf(recipe.name)}</span>
               <span className="fp-addpicker-row-body">

@@ -1212,8 +1212,10 @@ html, body {
   color: var(--sage-800);
 }
 .fp-shop-filter.is-on > svg { color: var(--sage-700); }
-.fp-shop-filter.is-on .fp-shop-filter-switch { background: var(--sage-700); }
-.fp-shop-filter.is-on .fp-shop-filter-switch::after { transform: translateX(12px); }
+.fp-shop-filter.is-on .fp-shop-filter-switch,
+.fp-addpicker-repeat.is-on .fp-shop-filter-switch { background: var(--sage-700); }
+.fp-shop-filter.is-on .fp-shop-filter-switch::after,
+.fp-addpicker-repeat.is-on .fp-shop-filter-switch::after { transform: translateX(12px); }
 .fp-app.is-mobile .fp-shop-filter { min-height: 40px; padding: 7px 8px 7px 14px; font-size: 14px; }
 
 /* "5 ticked items hidden · Show" line under a filtered list */
@@ -1911,6 +1913,32 @@ html, body {
 }
 .fp-addpicker-clear:hover { background: var(--sage-100); color: var(--sage-800); }
 .fp-addpicker-clear svg { width: 9px; height: 9px; }
+
+/* "Repeat dish (skip ingredients)" switch under the search field */
+.fp-addpicker-repeat {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 6px 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fp-addpicker-repeat:hover { background: var(--surface); border-color: var(--hairline); }
+.fp-addpicker-repeat > svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--muted); }
+.fp-addpicker-repeat > span:first-of-type { flex: 1 1 auto; }
+.fp-addpicker-repeat.is-on {
+  background: var(--sage-50);
+  border-color: var(--sage-500);
+  color: var(--sage-800);
+}
+.fp-addpicker-repeat.is-on > svg { color: var(--sage-700); }
 
 .fp-addpicker-body {
   max-height: 340px;
